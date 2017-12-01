@@ -588,6 +588,111 @@ Namespace WallnerMild.Draw
 
     End Class
 #End Region
+#Region "Text Class"
+    Public Class Text
+        Implements Drawable
+
+        Private p_text As String
+        Private p_position As Point
+        Private p_angle As Double
+
+
+        ''' <summary>
+        ''' Text to be written
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property text As String
+            Get
+                Return p_text
+            End Get
+            Set(value As String)
+                p_text = value
+            End Set
+        End Property
+        Public Property angle() As Double
+            Get
+                Return p_angle
+            End Get
+            Set(value As Double)
+                p_angle = value
+            End Set
+        End Property
+        Public Property position() As Point
+            Get
+                Return p_position
+            End Get
+            Set(value As Point)
+                p_position = value
+            End Set
+        End Property
+        Public Property zIndex As Long Implements Drawable.zIndex
+            Get
+                'Throw New NotImplementedException()
+            End Get
+            Set(value As Long)
+                'Throw New NotImplementedException()
+            End Set
+        End Property
+
+        Private Property Drawable_pen As pen Implements Drawable.pen
+            Get
+                'Throw New NotImplementedException()
+            End Get
+            Set(value As pen)
+                'Throw New NotImplementedException()
+            End Set
+        End Property
+
+        Public Sub draw(contextobject As ContextObject, contextCoordinatesDelegate As Drawable.contextCoordinates, Optional contextSizeDelegate As Drawable.contextSize = Nothing) Implements Drawable.draw
+            If TypeOf contextobject.Item Is System.Windows.Controls.Canvas Then
+                Dim myCanvas As New System.Windows.Controls.Canvas
+                myCanvas = TryCast(contextobject.Item, System.Windows.Controls.Canvas)
+                With myCanvas
+                    Dim tb As New Windows.Controls.TextBlock
+
+                    With tb
+                        .Text = p_text
+
+                        '
+                        ' calculate coordinates in local system
+                        ' by a call-back to the calling drawing object
+                        '
+                        'p1 = contextCoordinatesDelegate(startPoint)
+                        '                        t = contextSizeDelegate(Me.pen.size)
+                    End With
+
+                    Dim myRotateTransform As New Windows.Media.RotateTransform
+                    myRotateTransform.Angle = angle
+                    tb.RenderTransform = myRotateTransform
+
+                    Dim p As New Point
+
+                    '
+                    ' calculate coordinates in local system
+                    ' by a call-back to the calling drawing object
+                    '
+                    p = contextCoordinatesDelegate(p_position)
+                    myCanvas.Children.Add(tb)
+                    myCanvas.SetLeft(tb, p.x)
+                    myCanvas.SetTop(tb, p.y)
+                End With
+            Else
+                Throw New NotImplementedException()
+            End If
+        End Sub
+
+        Public Function boundingRectangle(Optional ref As Reference = Reference.world) As Double() Implements Drawable.boundingRectangle
+            'Throw New NotImplementedException()
+            Dim r(3) As Double
+            Return r
+        End Function
+
+        Public Function CompareTo(other As Drawable) As Integer Implements IComparable(Of Drawable).CompareTo
+            'Throw New NotImplementedException()
+        End Function
+    End Class
+
+#End Region
 #Region "Line Class"
     ''' <summary>
     ''' as a drawable item
@@ -1154,4 +1259,5 @@ Namespace WallnerMild.Draw
     <ComVisible(False)>
     Public Class fill
     End Class
+
 End Namespace

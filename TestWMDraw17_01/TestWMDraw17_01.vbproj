@@ -152,6 +152,7 @@
       <LastGenOutput>Settings.Designer.vb</LastGenOutput>
     </None>
     <AppDesigner Include="My Project\" />
+    <None Include="PasteImage.xlsm" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
