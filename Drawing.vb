@@ -30,6 +30,7 @@ Namespace WallnerMild.Draw
 
         Private p_drawables As New List(Of Drawable)
         Private p_context As Contexts
+        Private p_filename As String
         Private p_contextObject As New ContextObject
         Private p_boundingRectangle As Double()
         Private p_boundingRectangleUpdated As Boolean
@@ -61,6 +62,16 @@ Namespace WallnerMild.Draw
                 p_context = value
             End Set
         End Property
+
+        Public Property FileName() As String
+            Get
+                Return p_filename
+            End Get
+            Set(value As String)
+                p_filename = value
+            End Set
+        End Property
+
         ''' <summary>
         ''' 
         ''' </summary>
@@ -84,6 +95,21 @@ Namespace WallnerMild.Draw
                     c.Height = values(1)
                     c.Background = New System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent)
                     Me.p_contextObject.Item = c
+                Case Contexts.PNGFile
+                    Dim c As New System.Windows.Controls.Canvas
+                    c.Width = values(0)
+                    c.Height = values(1)
+                    c.Background = New System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Transparent)
+                    Me.p_contextObject.Item = c
+                    If values.GetUpperBound(0) >= 2 Then
+                        FileName = values(2)
+                    Else
+                        Dim fileName2 As String = ""
+                        FileName = Path.GetTempFileName
+                        fileName2 = FileName.Replace(Path.GetExtension(FileName), ".png")
+                        File.Move(FileName, fileName2)
+                        FileName = fileName2
+                    End If
             End Select
 
         End Sub
@@ -163,8 +189,12 @@ Namespace WallnerMild.Draw
             p_boundingRectangleUpdated = True
 
         End Sub
-
-        Public Sub draw()
+        ''' <summary>
+        ''' 
+        ''' </summary>
+        ''' <returns>filename if WriteToFile
+        ''' true if copy to clipboard</returns>
+        Public Function draw() As Object
 
             calculateBoundingRectangle()
 
@@ -177,91 +207,98 @@ Namespace WallnerMild.Draw
             '
             ' copy to Clipboard or save to File
             '
-            If Me.Context = Contexts.PNGClipboard Then
-                '
-                ' Save current canvas transform
-                '
-                Dim transform As Windows.Media.Transform = Me.ContextObject.Item.LayoutTransform
-                ' reset current transform (in case it is scaled or rotated)
-                Me.ContextObject.Item.LayoutTransform = Nothing
-
-                ' Get the size of canvas
-                Dim size As New System.Windows.Size(Me.ContextObject.Item.Width, Me.ContextObject.Item.Height)
-
-                ' Measure and arrange the surface
-                ' VERY IMPORTANT
-                Me.ContextObject.Item.Measure(size)
-                Me.ContextObject.Item.Arrange(New System.Windows.Rect(size))
-
-                '
-                ' Create a render bitmap (PNG) and push the canvas surface to it
-                '
-                Dim renderBitmap As New RenderTargetBitmap(CInt(size.Width), CInt(size.Height), 96.0, 96.0, Windows.Media.PixelFormats.Pbgra32)
-
-                '
-                ' canvas bounds
-                '
-                Dim bounds As System.Windows.Rect = Windows.Media.VisualTreeHelper.GetDescendantBounds(Me.ContextObject.Item)
-                '
-                ' drawing visual
-                '
-                Dim dv As New Windows.Media.DrawingVisual()
-                '
-                ' actually draw by using RenderOpen
-                ' (using actually closes the context at end using)
-                '
-                Using ctx As Windows.Media.DrawingContext = dv.RenderOpen()
+            Select Case Me.Context
+                Case Contexts.PNGClipboard, Contexts.PNGFile
                     '
-                    ' create a visual brush from the canvas
+                    ' Save current canvas transform
                     '
-                    Dim vb As New Windows.Media.VisualBrush(Me.ContextObject.Item)
+                    Dim transform As Windows.Media.Transform = Me.ContextObject.Item.LayoutTransform
+                    ' reset current transform (in case it is scaled or rotated)
+                    Me.ContextObject.Item.LayoutTransform = Nothing
+
+                    ' Get the size of canvas
+                    Dim size As New System.Windows.Size(Me.ContextObject.Item.Width, Me.ContextObject.Item.Height)
+
+                    ' Measure and arrange the surface
+                    ' VERY IMPORTANT
+                    Me.ContextObject.Item.Measure(size)
+                    Me.ContextObject.Item.Arrange(New System.Windows.Rect(size))
+
                     '
-                    ' draw it to the drawing context
+                    ' Create a render bitmap (PNG) and push the canvas surface to it
                     '
-                    ctx.DrawRectangle(vb, Nothing, New System.Windows.Rect(New System.Windows.Point(), bounds.Size))
-                End Using
+                    Dim renderBitmap As New RenderTargetBitmap(CInt(size.Width), CInt(size.Height), 96.0, 96.0, Windows.Media.PixelFormats.Pbgra32)
 
-                '
-                ' Render the Bitmap
-                '
-                renderBitmap.Render(dv)
+                    '
+                    ' canvas bounds
+                    '
+                    Dim bounds As System.Windows.Rect = Windows.Media.VisualTreeHelper.GetDescendantBounds(Me.ContextObject.Item)
+                    '
+                    ' drawing visual
+                    '
+                    Dim dv As New Windows.Media.DrawingVisual()
+                    '
+                    ' actually draw by using RenderOpen
+                    ' (using actually closes the context at end using)
+                    '
+                    Using ctx As Windows.Media.DrawingContext = dv.RenderOpen()
+                        '
+                        ' create a visual brush from the canvas
+                        '
+                        Dim vb As New Windows.Media.VisualBrush(Me.ContextObject.Item)
+                        '
+                        ' draw it to the drawing context
+                        '
+                        ctx.DrawRectangle(vb, Nothing, New System.Windows.Rect(New System.Windows.Point(), bounds.Size))
+                    End Using
+
+                    '
+                    ' Render the Bitmap
+                    '
+                    renderBitmap.Render(dv)
+
+                    Select Case Me.Context
+                        Case Contexts.PNGFile
+                            '
+                            ' Write to png-file 
+                            '
+                            Using outStream As New FileStream(FileName, FileMode.Create, FileAccess.Write, FileShare.None)
+                                ' Use png encoder for our data
+                                Dim encoder As New PngBitmapEncoder()
+                                ' push the rendered bitmap to it
+                                encoder.Frames.Add(BitmapFrame.Create(renderBitmap))
+                                ' save the data to the stream
+                                encoder.Save(outStream)
+                            End Using
+                            draw = FileName
+                        Case Contexts.PNGClipboard
+
+                            ' Copy PNG to clipboard as BMP-Bitmap
+                            ' Windows.Clipboard.SetImage(renderBitmap)
+
+                            '
+                            ' Copy PNG to clipboard as PNG-Bitmap
+                            '
+                            Using stream As New MemoryStream
+                                Dim encoder As New PngBitmapEncoder()
+                                ' push the rendered bitmap to it
+                                encoder.Frames.Add(BitmapFrame.Create(renderBitmap))
+                                ' save the data to the stream
+                                encoder.Save(stream)
+                                ' copy to clipboard (PNG is understood by office applicatoins but not in Irfanview)
+                                Dim data As New Windows.DataObject("PNG", stream)
+                                Windows.Clipboard.Clear()
+                                Windows.Clipboard.SetDataObject(data, True)
+                            End Using
+                            draw = True
+                    End Select
+
+                    ' Restore canvas transformations as previously saved 
+                    Me.ContextObject.Item.LayoutTransform = transform
+            End Select
 
 
-                '
-                ' Write to png-file 
-                '
-                'Using outStream As New FileStream("d:\temp\b.png", FileMode.Create, FileAccess.Write, FileShare.None)
-                '    ' Use png encoder for our data
-                '    Dim encoder As New PngBitmapEncoder()
-                '    ' push the rendered bitmap to it
-                '    encoder.Frames.Add(BitmapFrame.Create(renderBitmap))
-                '    ' save the data to the stream
-                '    encoder.Save(outStream)
-                'End Using
-
-
-                ' Copy PNG to clipboard as BMP-Bitmap
-                ' Windows.Clipboard.SetImage(renderBitmap)
-
-                '
-                ' Copy PNG to clipboard as PNG-Bitmap
-                '
-                Using stream As New MemoryStream
-                    Dim encoder As New PngBitmapEncoder()
-                    ' push the rendered bitmap to it
-                    encoder.Frames.Add(BitmapFrame.Create(renderBitmap))
-                    ' save the data to the stream
-                    encoder.Save(stream)
-                    ' copy to clipboard (PNG is understood by office applicatoins but not in Irfanview)
-                    Dim data As New Windows.DataObject("PNG", stream)
-                    Windows.Clipboard.Clear()
-                    Windows.Clipboard.SetDataObject(data, True)
-                End Using
-
-                ' Restore canvas transformations as previously saved 
-                Me.ContextObject.Item.LayoutTransform = transform
-            End If
-        End Sub
+        End Function
 
         ''' <summary>
         ''' Delegated function to calculate context-specific (transformed) size

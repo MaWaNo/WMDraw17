@@ -24,8 +24,28 @@ Public Class WMDraw
 
     Public Sub addText(startX As Double, startY As Double, Text As String)
         Dim t As New Text
+        t.position = New Point(startX, startY)
+        t.text = Text
+        't.angle = angle
         p_wmd.add(t)
     End Sub
+
+    Public Sub addSupport(posX As Double, posY As Double)
+        Dim s As New Support(posX, posY, 0)
+        p_wmd.add(s)
+    End Sub
+    Public Function drawToFile() As String
+        p_wmd.setContext(Contexts.PNGFile, 500, 500)
+        'p_wmd.setContext (Contexts.PNGFile,)
+        Try
+            p_wmd.draw()
+            Return p_wmd.FileName
+        Catch ex As Exception
+            MsgBox(ex.Message)
+            Return String.Empty
+        End Try
+
+    End Function
     Public Sub drawToClipboard()
         p_wmd.setContext(Contexts.PNGClipboard, 500, 500)
         Try

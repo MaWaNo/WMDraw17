@@ -892,6 +892,7 @@ Namespace WallnerMild.Draw
         Private p_position As New Point
         Private p_size As New size
         Private p_angle As Double
+        Private p_caption As String
 
         ' stiffness values
         Private p_cx As Double
@@ -942,6 +943,26 @@ Namespace WallnerMild.Draw
         ''' </summary>
         ''' <param name="x"></param>
         ''' <param name="y"></param>
+        ''' <param name="angle"></param>
+        Public Sub New(x As Double, y As Double, angle As Double, caption As String)
+            With p_position
+                .x = x
+                .y = y
+                .coordinateReference = Reference.world
+            End With
+            With p_size
+                .width = 5
+                .height = 5
+                .Reference = Reference.contextMillimeters
+            End With
+            p_caption = caption
+            p_angle = angle
+        End Sub
+        ''' <summary>
+        ''' 
+        ''' </summary>
+        ''' <param name="x"></param>
+        ''' <param name="y"></param>
         ''' <param name="coordinateReference"></param>
         ''' <param name="size"></param>
         ''' <param name="sizeReference"></param>
@@ -977,7 +998,14 @@ Namespace WallnerMild.Draw
                 p_size = value
             End Set
         End Property
-
+        Public Property caption As String
+            Get
+                Return p_caption
+            End Get
+            Set(value As String)
+                p_caption = value
+            End Set
+        End Property
         Public Property angle As Double
             Get
                 Return p_angle
@@ -1043,6 +1071,35 @@ Namespace WallnerMild.Draw
 
                     End With
 
+                    If p_caption <> "" Then
+                        Dim tb As New Windows.Controls.TextBlock
+
+                        With tb
+                            .Text = p_caption
+
+                            '
+                            ' calculate coordinates in local system
+                            ' by a call-back to the calling drawing object
+                            '
+                            'p1 = contextCoordinatesDelegate(startPoint)
+                            '                        t = contextSizeDelegate(Me.pen.size)
+                        End With
+
+                        Dim myRotateTransform As New Windows.Media.RotateTransform
+                        myRotateTransform.Angle = angle
+                        tb.RenderTransform = myRotateTransform
+
+                        Dim p As New Point
+
+                        '
+                        ' calculate coordinates in local system
+                        ' by a call-back to the calling drawing object
+                        '
+
+                        myCanvas.Children.Add(tb)
+                        myCanvas.SetLeft(tb, p1.x + h / 2)
+                        myCanvas.SetTop(tb, p1.y + h * ca)
+                    End If
                 End With
             Else
                 Throw New NotImplementedException()

@@ -6,9 +6,17 @@
         xmlns:local="clr-namespace:TestWMDraw17_01"
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525">
-    <Canvas x:Name="canvas1" HorizontalAlignment="Left" Height="165" Margin="99,60,0,0" VerticalAlignment="Top" Width="343" Background="AliceBlue">
+
+    <Canvas>
+    <StackPanel >
         <Button x:Name="button" Content="Zeichnen" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75" Canvas.Left="-85" Canvas.Top="-42"/>
         <Button x:Name="button1" Content="Geometrie" Canvas.Left="40" Canvas.Top="-42" Width="75"/>
-        <Button x:Name="button2" Content="Button" Canvas.Left="249" Canvas.Top="-42" Width="75"/>
+        <Button x:Name="button2" Content="TestCom" Canvas.Left="249" Canvas.Top="-42" Width="75"/>
+        <Button x:Name="button3" Content="File" Canvas.Left="249" Canvas.Top="-42" Width="75"/>
+    </StackPanel>
+
+    <Canvas x:Name="canvas1" HorizontalAlignment="Left" Height="165" Margin="99,60,0,0" VerticalAlignment="Top" Width="343" Background="AliceBlue">
+
+    </Canvas>
     </Canvas>
 </Window>

@@ -31,9 +31,9 @@ Class MainWindow
         wmd.add(New Line(4.5, 1.5, 9, 3))
 
         'support
-        wmd.add(New Support(3, 1, 0))
-        wmd.add(New Support(4.5, 1.5, 0))
-        wmd.add(New Support(9, 3, 0))
+        wmd.add(New Support(3, 1, 0, "A"))
+        wmd.add(New Support(4.5, 1.5, 0, "B"))
+        wmd.add(New Support(9, 3, 30, "C"))
 
         'point
         wmd.add(New Point(3, 3, PointDisplay.x, 2, Reference.contextMillimeters))
@@ -108,6 +108,22 @@ Class MainWindow
     Private Sub button2_Click(sender As Object, e As RoutedEventArgs) Handles button2.Click
         Dim wmcom As New WMDraw17COM.WMDraw
         wmcom.test1()
+        MsgBox("PNG Copied to Clipboard")
+    End Sub
 
+    Private Sub button3_Click(sender As Object, e As RoutedEventArgs) Handles button3.Click
+        Dim wmd As New Drawing
+
+        '
+        ' add some lines
+        '
+
+        ' World Coordinates
+        wmd.add(New Line(0, 0, 3, 1))
+        wmd.add(New Line(3, 1, 4.5, 1.5))
+        wmd.add(New Line(4.5, 1.5, 9, 3))
+
+        wmd.setContext(Contexts.PNGFile, 500, 500)
+        MsgBox(wmd.draw())
     End Sub
 End Class
