@@ -775,6 +775,9 @@ Namespace WallnerMild.Draw
                         t = contextSizeDelegate(Me.pen.size)
                         If t.width < 1 Then t.width = 1
 
+#If DEBUG Then
+                        Debug.Print("Line (" & String.Format("({0:F2}/{1:F2}) - ({2:F2}/{3:F2})", p1.x, p1.y, p2.x, p2.y))
+#End If
                         .X1 = p1.x
                         .Y1 = p1.y
                         .X2 = p2.x

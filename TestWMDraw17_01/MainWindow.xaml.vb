@@ -1,5 +1,6 @@
 ﻿Imports WMDraw17.WallnerMild.Draw
 Imports WMDraw17.WallnerMild
+Imports WMDraw17COM.WMDraw
 
 Class MainWindow
     Private Sub button_Click(sender As Object, e As RoutedEventArgs) Handles button.Click
@@ -123,7 +124,29 @@ Class MainWindow
         wmd.add(New Line(3, 1, 4.5, 1.5))
         wmd.add(New Line(4.5, 1.5, 9, 3))
 
-        wmd.setContext(Contexts.PNGFile, 500, 500)
+        wmd.setContext(Contexts.PNGFile, 50, 50, "mm")
+        MsgBox(wmd.draw())
+    End Sub
+
+    Private Sub buttonB_Click(sender As Object, e As RoutedEventArgs) Handles buttonB.Click
+
+        Dim wmd As New Drawing
+
+        For i As Long = 0 To 9 Step 2
+            wmd.add(New Line(i / 10, 0, (i + 1) / 10, 0, References.contextFraction))
+            wmd.add(New Line(0, i / 10, 0, (i + 1) / 10, References.contextFraction))
+        Next
+
+        'wmd.add(New Line(0, 0, 0, 1, References.contextFraction))
+        'wmd.add(New Line(0, 0, 1, 0, References.contextFraction))
+
+        wmd.add(New Line(0, 0, 1, 1, References.contextFraction))
+        wmd.add(New Line(0, 1, 1, 0, References.contextFraction))
+
+        wmd.add(New Line(0, 0.5, 1, 0.5, References.contextFraction))
+        wmd.add(New Line(0.5, 0, 0.5, 1, References.contextFraction))
+
+        wmd.setContext(Contexts.PNGFile, 50, 50, "mm", "d:\temp\file1.png")
         MsgBox(wmd.draw())
     End Sub
 End Class
