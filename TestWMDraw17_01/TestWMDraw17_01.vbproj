@@ -230,6 +230,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\vb.net_productive\WMCore\WMCore.vbproj">
+      <Project>{f8d8431f-38a0-4d23-9a06-f529e59ce3c1}</Project>
+      <Name>WMCore</Name>
+    </ProjectReference>
     <ProjectReference Include="..\WMDraw17.vbproj">
       <Project>{3ab9a9c2-2bf4-4497-bf64-3ecd4fc2b53a}</Project>
       <Name>WMDraw17</Name>

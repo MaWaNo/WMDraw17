@@ -172,16 +172,17 @@ Class MainWindow
         l2.d = New Geom.Vector(0, 1)
         'l2.offsetLine(0.5)
 
-        Dim S As New Geom.Vector
+        Dim S As New Geom.Point
         S = l1.intersect(l2)
 
         MsgBox(String.Format("S ({0}/{1})", S.x, S.y))
     End Sub
 
     Private Sub button2_Click(sender As Object, e As RoutedEventArgs) Handles button2.Click
+
         Dim wmcom As New c_WMComDraw
         wmcom.test1()
-        MsgBox("PNG Copied to Clipboard")
+        MsgBox("Tested c_WMComDraw - COM Interop class." & vbCrLf & "PNG Copied to Clipboard")
     End Sub
 
     Private Sub button3_Click(sender As Object, e As RoutedEventArgs) Handles button3.Click

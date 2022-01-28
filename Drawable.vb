@@ -2,16 +2,13 @@
 Imports System.Globalization
 Imports System.Runtime.InteropServices
 Imports System.Windows.Media
+Imports wmg = WallnerMild.Geom
 
 #Const dp = False
 
 Namespace WMDraw
 
 #Region "Drawable Interface"
-    ''' <summary>
-    ''' Drawable Interface as base for drawing objects
-    ''' </summary>
-    <ComVisible(False)>
     Public Interface Drawable
         Inherits IComparable(Of Drawable)
 
@@ -43,15 +40,16 @@ Namespace WMDraw
         Delegate Function estimateWorldSize(ByVal s As size) As size
 
         ''' <summary>
-        ''' Drawing Order
-        ''' </summary>
-        ''' <returns></returns>
-        Property zIndex As Long
-        ''' <summary>
         ''' Pen
         ''' </summary>
         ''' <returns></returns>
         Property pen As pen
+
+        ''' <summary>
+        ''' Drawing Order
+        ''' </summary>
+        ''' <returns></returns>
+        Property zIndex As Long
         ' Property fill As fill
 
         ''' <summary>
@@ -69,7 +67,10 @@ Namespace WMDraw
         ''' <param name="contextSizeDelegate"></param>
         Sub draw(contextobject As ContextObject, contextCoordinatesDelegate As contextCoordinates, Optional contextSizeDelegate As contextSize = Nothing)
 
+
     End Interface
+
+
 #End Region
 
     ''' <summary>
@@ -95,27 +96,15 @@ Namespace WMDraw
     '     Implementiert einen Satz vordefinierter Farben.
     Public NotInheritable Class WMColors
 
-        Public Shared ReadOnly Property DarkRed As Color
-            Get
-                Return Color.FromRgb(164, 18, 21)
-            End Get
-        End Property
-
-        Public Shared ReadOnly Property Red As Color
-            Get
-                Return Color.FromRgb(&HFF, 0, 0)
-            End Get
-        End Property
-
         Public Shared ReadOnly Property DarkGrey As Color
             Get
                 Return Color.FromRgb(64, 64, 64)
             End Get
         End Property
 
-        Public Shared ReadOnly Property LightGrey As Color
+        Public Shared ReadOnly Property DarkRed As Color
             Get
-                Return Color.FromRgb(223, 223, 223)
+                Return Color.FromRgb(164, 18, 21)
             End Get
         End Property
 
@@ -131,9 +120,44 @@ Namespace WMDraw
             End Get
         End Property
 
+        Public Shared ReadOnly Property LightGrey As Color
+            Get
+                Return Color.FromRgb(223, 223, 223)
+            End Get
+        End Property
+
+        Public Shared ReadOnly Property LightWallnerMildBlue As Color
+            Get
+                Return Color.FromRgb(203, 230, 247)
+            End Get
+        End Property
+
+        Public Shared ReadOnly Property MediumWallnerMildBlue As Color
+            Get
+                Return Color.FromRgb(203, 230, 247)
+            End Get
+        End Property
+
+        Public Shared ReadOnly Property MediumWallnerMildBlueTransparent As Color
+            Get
+                Return Color.FromArgb(&H80, &H9B, &HCE, &HF3)
+            End Get
+        End Property
+
         Public Shared ReadOnly Property Olive As Color
             Get
                 Return Color.FromRgb(&H73, &H71, &HB)
+            End Get
+        End Property
+
+        Public Shared ReadOnly Property Red As Color
+            Get
+                Return Color.FromRgb(&HFF, 0, 0)
+            End Get
+        End Property
+        Public Shared ReadOnly Property WoodDarkYellow As Color
+            Get
+                Return Color.FromRgb(&HE6, &HDC, &H87)
             End Get
         End Property
 
@@ -146,31 +170,6 @@ Namespace WMDraw
         Public Shared ReadOnly Property WoodMediumYellow As Color
             Get
                 Return Color.FromRgb(&HFF, &HF5, &H96)
-            End Get
-        End Property
-
-        Public Shared ReadOnly Property WoodDarkYellow As Color
-            Get
-                Return Color.FromRgb(&HE6, &HDC, &H87)
-            End Get
-        End Property
-
-        Public Shared ReadOnly Property MediumWallnerMildBlue As Color
-            Get
-                Return Color.FromRgb(203, 230, 247)
-            End Get
-        End Property
-
-
-        Public Shared ReadOnly Property MediumWallnerMildBlueTransparent As Color
-            Get
-                Return Color.FromArgb(&H80, &H9B, &HCE, &HF3)
-            End Get
-        End Property
-
-        Public Shared ReadOnly Property LightWallnerMildBlue As Color
-            Get
-                Return Color.FromRgb(203, 230, 247)
             End Get
         End Property
         ''' <summary>
@@ -208,17 +207,6 @@ Namespace WMDraw
     ''' </summary>
     Public Class myMath
         ''' <summary>
-        ''' convert degrees to radians
-        ''' </summary>
-        ''' <param name="angle_degrees">angle in degrees</param>
-        ''' <returns>
-        ''' angle in radians
-        ''' </returns>
-        Public Shared Function radians(angle_degrees As Double) As Double
-            radians = angle_degrees * Math.PI / 180
-        End Function
-
-        ''' <summary>
         ''' convert radians to degrees
         ''' </summary>
         ''' <param name="angle_radians">Angle in radians</param>
@@ -226,6 +214,7 @@ Namespace WMDraw
         Public Shared Function degrees(angle_radians As Double) As Double
             degrees = angle_radians * 180 / Math.PI
         End Function
+
         ''' <summary>
         ''' include a point in the bounding rectangle
         ''' </summary>
@@ -237,6 +226,30 @@ Namespace WMDraw
             If p.y < r(1) Then r(1) = p.y
             If p.y > r(3) Then r(3) = p.y
         End Sub
+
+        ''' <summary>
+        ''' include a point in the bounding rectangle
+        ''' </summary>
+        ''' <param name="r">rectangle by reference (0..xmin, 1...ymin, 2...xmax, 3...ymax</param>
+        ''' <param name="x">x coordinate</param>
+        ''' <param name="y">y coordinate</param>
+        Public Shared Sub includeInBoundingRectangle(ByRef r() As Double, x As Double, y As Double)
+            If x < r(0) Then r(0) = x
+            If x > r(2) Then r(2) = x
+            If y < r(1) Then r(1) = y
+            If y > r(3) Then r(3) = y
+        End Sub
+
+        ''' <summary>
+        ''' convert degrees to radians
+        ''' </summary>
+        ''' <param name="angle_degrees">angle in degrees</param>
+        ''' <returns>
+        ''' angle in radians
+        ''' </returns>
+        Public Shared Function radians(angle_degrees As Double) As Double
+            radians = angle_degrees * Math.PI / 180
+        End Function
     End Class
 #End Region
 
@@ -246,11 +259,9 @@ Namespace WMDraw
     ''' </summary>
     <ComVisible(False)>
     Public Class size
-        Private p_width As Double
         Private p_height As Double
-
         Private p_Reference As New Reference
-
+        Private p_width As Double
         Public Sub New()
             p_width = 0
             p_height = 0
@@ -280,14 +291,15 @@ Namespace WMDraw
         End Sub
 
         ''' <summary>
-        ''' Width in reference-system
+        ''' average size
         ''' </summary>
         ''' <returns></returns>
-        Public Property width As Double
+        Public Property average As Double
             Get
-                Return p_width
+                average = (Math.Abs(width) + Math.Abs(height)) / 2
             End Get
             Set(value As Double)
+                p_height = value
                 p_width = value
             End Set
         End Property
@@ -304,6 +316,30 @@ Namespace WMDraw
                 p_height = value
             End Set
         End Property
+
+        ''' <summary>
+        ''' max size
+        ''' </summary>
+        ''' <returns></returns>
+        Public ReadOnly Property max As Double
+            Get
+                max = Math.Max(Math.Abs(width), Math.Abs(height))
+            End Get
+        End Property
+
+        ''' <summary>
+        ''' reference system
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property Reference As Reference
+            Get
+                Return p_Reference
+            End Get
+            Set(value As Reference)
+                p_Reference = value
+            End Set
+        End Property
+
         ''' <summary>
         ''' Thickness in reference system (average of width and height) 
         ''' equivalent to average
@@ -317,38 +353,17 @@ Namespace WMDraw
                 average = value
             End Set
         End Property
+
         ''' <summary>
-        ''' average size
+        ''' Width in reference-system
         ''' </summary>
         ''' <returns></returns>
-        Public Property average As Double
+        Public Property width As Double
             Get
-                average = (Math.Abs(width) + Math.Abs(height)) / 2
+                Return p_width
             End Get
             Set(value As Double)
-                p_height = value
                 p_width = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' max size
-        ''' </summary>
-        ''' <returns></returns>
-        Public ReadOnly Property max As Double
-            Get
-                max = Math.Max(Math.Abs(width), Math.Abs(height))
-            End Get
-        End Property
-        ''' <summary>
-        ''' reference system
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property Reference As Reference
-            Get
-                Return p_Reference
-            End Get
-            Set(value As Reference)
-                p_Reference = value
             End Set
         End Property
     End Class
@@ -361,46 +376,33 @@ Namespace WMDraw
     Public Class Point
         Implements Drawable
 
-        Private p_zIndex As Long
-        Private p_pen As pen
-
-        ''' <summary>
-        ''' CompareTo as implementation of IComparable
-        ''' </summary>
-        ''' <param name="other"></param>
-        ''' <returns></returns>
-        Public Function CompareTo(ByVal other As Drawable) As Integer Implements System.IComparable(Of Drawable).CompareTo
-            If p_zIndex = other.zIndex Then
-                Return 0
-            Else
-                If p_zIndex < other.zIndex Then
-                    Return -1
-                Else
-                    Return 1
-                End If
-            End If
-        End Function
-        ''' <summary>
-        ''' x-Coordinate in world coordinates
-        ''' </summary>
-        Private p_x As Double
-        ''' <summary>
-        ''' y-Coordinate in world coordinates
-        ''' </summary>
-        Private p_y As Double
         ''' <summary>
         ''' Coordinate reference
         ''' </summary>
         Private p_coordinateReference As Reference
+
         ''' <summary>
         ''' Display type
         ''' </summary>
         Private p_display As WMDraw.PointDisplay
+
         ''' <summary>
         ''' Size
         ''' </summary>
         Private p_displaySize As New size
 
+        Private p_pen As New pen
+        ''' <summary>
+        ''' x-Coordinate in world coordinates
+        ''' </summary>
+        Private p_x As Double
+
+        ''' <summary>
+        ''' y-Coordinate in world coordinates
+        ''' </summary>
+        Private p_y As Double
+
+        Private p_zIndex As Long
         ''' <summary>
         ''' Point at position 0/0
         ''' </summary>
@@ -411,6 +413,7 @@ Namespace WMDraw
             p_displaySize.width = 1
             p_displaySize.height = 1
         End Sub
+
         ''' <summary>
         ''' Pint by given world coordinates
         ''' </summary>
@@ -426,6 +429,7 @@ Namespace WMDraw
 
             p_coordinateReference = Reference.world
         End Sub
+
         ''' <summary>
         ''' point by coordinates in defined reference coordinates
         ''' </summary>
@@ -443,6 +447,7 @@ Namespace WMDraw
             p_displaySize.Reference = Reference.contextMillimeters
             p_displaySize.Reference = Reference.contextMillimeters
         End Sub
+
         ''' <summary>
         ''' point by coordinates in defined reference coordinates with defined display options
         ''' </summary>
@@ -480,6 +485,14 @@ Namespace WMDraw
             p_displaySize.height = displaySize
             p_displaySize.Reference = displayReference
         End Sub
+        Public Shared Operator =(pointA As Point, pointB As Point) As Boolean
+            Return (pointA.x = pointB.x And pointA.y = pointB.y)
+        End Operator
+
+        Public Shared Operator <>(pointA As Point, pointB As Point) As Boolean
+            Return Not (pointA.x = pointB.x And pointA.y = pointB.y)
+        End Operator
+
         ''' <summary>
         ''' coordinate reference
         ''' </summary>
@@ -492,6 +505,109 @@ Namespace WMDraw
                 p_coordinateReference = value
             End Set
         End Property
+
+        ''' <summary>
+        ''' display type
+        ''' </summary>
+        Public Property display As PointDisplay
+            Get
+                Return p_display
+            End Get
+            Set(value As PointDisplay)
+                p_display = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' display size (in displayReference units)
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property displaySize As size
+            Get
+                Return p_displaySize
+            End Get
+            Set(value As size)
+                p_displaySize = value
+            End Set
+        End Property
+
+        Public Property pen As pen Implements Drawable.pen
+            Get
+                Return p_pen
+            End Get
+            Set(value As pen)
+                p_pen = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' x-coordinate (in Coordinate-reference units)
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property x As Double
+            Get
+                Return p_x
+            End Get
+            Set(value As Double)
+                p_x = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' y-coordinate (in Coordinate-reference units)
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property y As Double
+            Get
+                Return p_y
+            End Get
+            Set(value As Double)
+                p_y = value
+            End Set
+        End Property
+
+        Public Property zIndex As Long Implements Drawable.zIndex
+            Get
+                Return p_zIndex
+            End Get
+            Set(value As Long)
+                p_zIndex = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' bounding rectangle
+        ''' </summary>
+        ''' 
+        ''' <returns></returns>
+        Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
+
+            Dim r(3) As Double
+
+            r(0) = Me.x
+            r(1) = Me.y
+            r(2) = Me.x
+            r(3) = Me.y
+
+            Return r
+        End Function
+
+        ''' <summary>
+        ''' CompareTo as implementation of IComparable
+        ''' </summary>
+        ''' <param name="other"></param>
+        ''' <returns></returns>
+        Public Function CompareTo(ByVal other As Drawable) As Integer Implements System.IComparable(Of Drawable).CompareTo
+            If p_zIndex = other.zIndex Then
+                Return 0
+            Else
+                If p_zIndex < other.zIndex Then
+                    Return -1
+                Else
+                    Return 1
+                End If
+            End If
+        End Function
         ''' <summary>
         ''' draw the item
         ''' </summary>
@@ -577,131 +693,147 @@ Namespace WMDraw
 
         End Sub
 
-        ''' <summary>
-        ''' bounding rectangle
-        ''' </summary>
-        ''' 
-        ''' <returns></returns>
-        Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
+        Public Function rotate(center As Point, angle As Double) As Point
+            Dim p As New WallnerMild.Geom.Vector
+            Dim c As New WallnerMild.Geom.Vector
+            c.x = center.x
+            c.y = center.y
+            p.x = Me.x
+            p.y = Me.y
+            p.subtract(c)
+            p.rotate(angle * Math.PI / 180)
+            p.add(c)
 
-            Dim r(3) As Double
-
-            r(0) = Me.x
-            r(1) = Me.y
-            r(2) = Me.x
-            r(3) = Me.y
-
-            Return r
+            rotate = Me
+            rotate.x = p.x
+            rotate.y = p.y
         End Function
-
-
-        ''' <summary>
-        ''' x-coordinate (in Coordinate-reference units)
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property x As Double
-            Get
-                Return p_x
-            End Get
-            Set(value As Double)
-                p_x = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' y-coordinate (in Coordinate-reference units)
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property y As Double
-            Get
-                Return p_y
-            End Get
-            Set(value As Double)
-                p_y = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' display type
-        ''' </summary>
-        Public Property display As PointDisplay
-            Get
-                Return p_display
-            End Get
-            Set(value As PointDisplay)
-                p_display = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' display size (in displayReference units)
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property displaySize As size
-            Get
-                Return p_displaySize
-            End Get
-            Set(value As size)
-                p_displaySize = value
-            End Set
-        End Property
-
-        Public Property pen As pen Implements Drawable.pen
-            Get
-                Return p_pen
-            End Get
-            Set(value As pen)
-                p_pen = value
-            End Set
-        End Property
-
-        Public Property zIndex As Long Implements Drawable.zIndex
-            Get
-                Return p_zIndex
-            End Get
-            Set(value As Long)
-                p_zIndex = value
-            End Set
-        End Property
     End Class
 
 #End Region
 #Region "Beam Class"
     <ComVisible(False)>
+    Public Class Beam
+        Inherits Line
+        Implements Drawable
+
+        Public Sub New()
+            MyBase.New
+            Me.pen.thickness = 3
+        End Sub
+
+        Sub New(startX As Double, startY As Double, endX As Double, endY As Double)
+            Me.startPoint = New Point(startX, startY)
+            Me.endPoint = New Point(endX, endY)
+            Me.pen = New pen
+            Me.pen.thickness = 3
+        End Sub
+
+        Public Overrides Sub draw(contextobject As ContextObject, contextCoordinatesDelegate As Drawable.contextCoordinates, Optional contextSizeDelegate As Drawable.contextSize = Nothing) Implements Drawable.draw
+            If TypeOf contextobject.Item Is System.Windows.Controls.Canvas Then
+                Dim myCanvas As New System.Windows.Controls.Canvas
+                myCanvas = TryCast(contextobject.Item, System.Windows.Controls.Canvas)
+                With myCanvas
+                    Dim line1 As New System.Windows.Shapes.Line
+                    Dim line2 As New System.Windows.Shapes.Line
+
+                    '
+                    ' calculate coordinates in local system
+                    ' by a call-back to the calling drawing object
+                    '
+                    Dim p1 As New Point
+                    Dim p2 As New Point
+                    Dim t As size
+
+                    Dim vx As Double
+                    Dim vy As Double
+                    Dim tmp As Double
+
+                    p1 = contextCoordinatesDelegate(startPoint)
+                    p2 = contextCoordinatesDelegate(endPoint)
+
+                    t = contextSizeDelegate(Me.pen.size)
+                    If t.width < 1 Then t.width = 1
+
+                    vx = p2.x - p1.x
+                    vy = p2.y - p1.y
+
+                    '
+                    ' normal vector
+                    '
+                    tmp = vx
+                    vx = -vy
+                    vy = tmp
+                    '
+                    ' uniform vector
+                    '
+                    tmp = Math.Sqrt(vx ^ 2 + vy ^ 2)
+                    If tmp <> 0 Then
+                        vx = vx / tmp
+                        vy = vy / tmp
+                    End If
+
+                    With line1
+                        .X1 = p1.x
+                        .Y1 = p1.y
+                        .X2 = p2.x
+                        .Y2 = p2.y
+                        .Stroke = Me.pen.stroke
+                        .StrokeThickness = t.width
+                        .StrokeDashArray = Me.pen.dashArray
+                    End With
+
+                    With line2
+                        .X1 = p1.x + vx * t.width * 1.5
+                        .Y1 = p1.y + vy * t.width * 1.5
+                        .X2 = p2.x + vx * t.width * 1.5
+                        .Y2 = p2.y + vy * t.width * 1.5
+                        .Stroke = Me.pen.stroke
+                        .StrokeThickness = 1
+
+                        ' ----    ----    ----    ----
+                        Dim sda As New Windows.Media.DoubleCollection
+                        sda.Add(4)
+                        sda.Add(4)
+                        .StrokeDashArray = sda
+                    End With
+
+                    myCanvas.Children.Add(line1)
+                    myCanvas.Children.Add(line2)
+                End With
+            Else
+                Throw New NotImplementedException()
+            End If
+        End Sub
+
+    End Class
+
+    <ComVisible(False)>
     Public Class BeamUniformLoad
         Inherits Line
         Implements Drawable
 
-        Private p_fill As fill
-
-        Public Enum loadDirectionType
-            localKS
-            globalKS
-        End Enum
-
-        Public Enum loadReferenceLength
-            horizontalProjection
-            realLength
-        End Enum
-
-        Private Const DEFAULT_LOADOFFSET_MM = 10
         Private Const DEFAULT_ARROW_DISTANCE_MM = 3
-        Private Const DEFAULT_ARROWTIP_WIDTH_MM = 1
         Private Const DEFAULT_ARROWTIP_HEIGHT_MM = 1.5
+        Private Const DEFAULT_ARROWTIP_WIDTH_MM = 1
         Private Const DEFAULT_LOADBACKGROUND_HEX = "#37c6c6c6"
-        'Private p_offsetIndex As Integer
-        Private p_direction As loadDirectionType
-        Private p_lengthReference As loadReferenceLength
-
-        Private p_loadIntensityStart As New size
-        Private p_loadIntensityEnd As New size
-        Private p_loadOffset As New size
-
-        Private p_drawArrows As Boolean
-
-        Private p_captionStart As String
+        Private Const DEFAULT_LOADOFFSET_MM = 10
         Private p_captionEnd As String
         Private p_captionMidpoint As String
+        Private p_captionStart As String
+        'Private p_offsetIndex As Integer
+        Private p_direction As loadDirectionType
 
+        Private p_drawArrows As Boolean
+        Private p_fill As fill
+
+        Private p_lengthReference As loadReferenceLength
+
+        Private p_loadIntensityEnd As New size
+
+        Private p_loadIntensityStart As New size
+
+        Private p_loadOffset As New size
 
         'Private p_font As font
         Sub New()
@@ -738,6 +870,64 @@ Namespace WMDraw
             Me.lengthReference = lengthReference
             Me.p_direction = direction
         End Sub
+
+        Public Enum loadDirectionType
+            localKS
+            globalKS
+        End Enum
+
+        Public Enum loadReferenceLength
+            horizontalProjection
+            realLength
+        End Enum
+        ''' <summary>
+        ''' Caption at end of udl
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property captionEnd As String
+            Get
+                Return p_captionEnd
+            End Get
+            Set(value As String)
+                p_captionEnd = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Caption at midpoint of udl
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property captionMidpoint As String
+            Get
+                Return p_captionMidpoint
+            End Get
+            Set(value As String)
+                p_captionMidpoint = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Caption at start of udl
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property captionStart As String
+            Get
+                Return p_captionStart
+            End Get
+            Set(value As String)
+                p_captionStart = value
+            End Set
+        End Property
+
+        Public Property direction As loadDirectionType
+            Get
+                Return p_direction
+            End Get
+            Set(value As loadDirectionType)
+                p_direction = value
+            End Set
+        End Property
+
         Public Property drawArrows() As Boolean
             Get
                 Return p_drawArrows
@@ -747,16 +937,21 @@ Namespace WMDraw
             End Set
         End Property
 
-        ''' <summary>
-        ''' Load Intensity at start point
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property loadIntensityStart() As size
+        Public Property fill() As fill
             Get
-                Return p_loadIntensityStart
+                Return p_fill
             End Get
-            Set(value As size)
-                p_loadIntensityStart = value
+            Set(value As fill)
+                p_fill = value
+            End Set
+        End Property
+
+        Public Property lengthReference As loadReferenceLength
+            Get
+                Return p_lengthReference
+            End Get
+            Set(value As loadReferenceLength)
+                p_lengthReference = value
             End Set
         End Property
 
@@ -772,6 +967,19 @@ Namespace WMDraw
                 p_loadIntensityEnd = value
             End Set
         End Property
+
+        ''' <summary>
+        ''' Load Intensity at start point
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property loadIntensityStart() As size
+            Get
+                Return p_loadIntensityStart
+            End Get
+            Set(value As size)
+                p_loadIntensityStart = value
+            End Set
+        End Property
         ''' <summary>
         ''' Distance from reference points to actual load display
         ''' </summary>
@@ -784,68 +992,6 @@ Namespace WMDraw
                 p_loadOffset = value
             End Set
         End Property
-
-        Public Property lengthReference As loadReferenceLength
-            Get
-                Return p_lengthReference
-            End Get
-            Set(value As loadReferenceLength)
-                p_lengthReference = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Caption at start of udl
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property captionStart As String
-            Get
-                Return p_captionStart
-            End Get
-            Set(value As String)
-                p_captionStart = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Caption at end of udl
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property captionEnd As String
-            Get
-                Return p_captionEnd
-            End Get
-            Set(value As String)
-                p_captionEnd = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Caption at midpoint of udl
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property captionMidpoint As String
-            Get
-                Return p_captionMidpoint
-            End Get
-            Set(value As String)
-                p_captionMidpoint = value
-            End Set
-        End Property
-        Public Property direction As loadDirectionType
-            Get
-                Return p_direction
-            End Get
-            Set(value As loadDirectionType)
-                p_direction = value
-            End Set
-        End Property
-        Public Property fill() As fill
-            Get
-                Return p_fill
-            End Get
-            Set(value As fill)
-                p_fill = value
-            End Set
-        End Property
-
         Public Overloads Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
             Dim r(3) As Double
 
@@ -1245,10 +1391,9 @@ Namespace WMDraw
         Inherits Line
         Implements Drawable
         Private p_EndHinge As Boolean
-        Private p_StartHinge As Boolean
         Private p_hingeSize As size
         Private p_isInOpening As Boolean
-
+        Private p_StartHinge As Boolean
         Public Sub New(startX As Double, startY As Double, endX As Double, endY As Double)
             Me.startPoint = New Point(startX, startY)
             Me.endPoint = New Point(endX, endY)
@@ -1264,23 +1409,6 @@ Namespace WMDraw
             Me.pen.thickness = 1
             Me.HingeSize = New size(1, 1, Reference.contextMillimeters)
         End Sub
-        Public Property isInOpening As Boolean
-            Get
-                Return p_isInOpening
-            End Get
-            Set(value As Boolean)
-                p_isInOpening = value
-            End Set
-        End Property
-        Public Property StartHinge() As Boolean
-            Get
-                Return p_StartHinge
-            End Get
-            Set(value As Boolean)
-                p_StartHinge = value
-            End Set
-        End Property
-
         Public Property EndHinge() As Boolean
             Get
                 Return p_EndHinge
@@ -1299,7 +1427,22 @@ Namespace WMDraw
             End Set
         End Property
 
-
+        Public Property isInOpening As Boolean
+            Get
+                Return p_isInOpening
+            End Get
+            Set(value As Boolean)
+                p_isInOpening = value
+            End Set
+        End Property
+        Public Property StartHinge() As Boolean
+            Get
+                Return p_StartHinge
+            End Get
+            Set(value As Boolean)
+                p_StartHinge = value
+            End Set
+        End Property
         Public Overrides Sub draw(contextobject As ContextObject, contextCoordinatesDelegate As Drawable.contextCoordinates, Optional contextSizeDelegate As Drawable.contextSize = Nothing) Implements Drawable.draw
             If isInOpening Then Return
 
@@ -1409,116 +1552,19 @@ Namespace WMDraw
             End If
         End Sub
     End Class
-    <ComVisible(False)>
-    Public Class Beam
-        Inherits Line
-        Implements Drawable
-
-        Public Sub New()
-            MyBase.New
-            Me.pen.thickness = 3
-        End Sub
-
-        Sub New(startX As Double, startY As Double, endX As Double, endY As Double)
-            Me.startPoint = New Point(startX, startY)
-            Me.endPoint = New Point(endX, endY)
-            Me.pen = New pen
-            Me.pen.thickness = 3
-        End Sub
-
-        Public Overrides Sub draw(contextobject As ContextObject, contextCoordinatesDelegate As Drawable.contextCoordinates, Optional contextSizeDelegate As Drawable.contextSize = Nothing) Implements Drawable.draw
-            If TypeOf contextobject.Item Is System.Windows.Controls.Canvas Then
-                Dim myCanvas As New System.Windows.Controls.Canvas
-                myCanvas = TryCast(contextobject.Item, System.Windows.Controls.Canvas)
-                With myCanvas
-                    Dim line1 As New System.Windows.Shapes.Line
-                    Dim line2 As New System.Windows.Shapes.Line
-
-                    '
-                    ' calculate coordinates in local system
-                    ' by a call-back to the calling drawing object
-                    '
-                    Dim p1 As New Point
-                    Dim p2 As New Point
-                    Dim t As size
-
-                    Dim vx As Double
-                    Dim vy As Double
-                    Dim tmp As Double
-
-                    p1 = contextCoordinatesDelegate(startPoint)
-                    p2 = contextCoordinatesDelegate(endPoint)
-
-                    t = contextSizeDelegate(Me.pen.size)
-                    If t.width < 1 Then t.width = 1
-
-                    vx = p2.x - p1.x
-                    vy = p2.y - p1.y
-
-                    '
-                    ' normal vector
-                    '
-                    tmp = vx
-                    vx = -vy
-                    vy = tmp
-                    '
-                    ' uniform vector
-                    '
-                    tmp = Math.Sqrt(vx ^ 2 + vy ^ 2)
-                    If tmp <> 0 Then
-                        vx = vx / tmp
-                        vy = vy / tmp
-                    End If
-
-                    With line1
-                        .X1 = p1.x
-                        .Y1 = p1.y
-                        .X2 = p2.x
-                        .Y2 = p2.y
-                        .Stroke = Me.pen.stroke
-                        .StrokeThickness = t.width
-                        .StrokeDashArray = Me.pen.dashArray
-                    End With
-
-                    With line2
-                        .X1 = p1.x + vx * t.width * 1.5
-                        .Y1 = p1.y + vy * t.width * 1.5
-                        .X2 = p2.x + vx * t.width * 1.5
-                        .Y2 = p2.y + vy * t.width * 1.5
-                        .Stroke = Me.pen.stroke
-                        .StrokeThickness = 1
-
-                        ' ----    ----    ----    ----
-                        Dim sda As New Windows.Media.DoubleCollection
-                        sda.Add(4)
-                        sda.Add(4)
-                        .StrokeDashArray = sda
-                    End With
-
-                    myCanvas.Children.Add(line1)
-                    myCanvas.Children.Add(line2)
-                End With
-            Else
-                Throw New NotImplementedException()
-            End If
-        End Sub
-
-    End Class
 #End Region
 #Region "Text Class"
     Public Class Text
         Implements Drawable
 
-        Private p_text As String
-        Private p_position As New Point
         Private p_angle As Double
         Private p_fontSize As New size
-
-        Private p_zindex As Long
         Private p_pen As pen
-
+        Private p_position As New Point
+        Private p_text As String
+        Private p_zindex As Long
         Public Sub New()
-            p_fontSize.height = 12
+            p_fontSize.height = 3
             p_fontSize.Reference = Reference.contextMillimeters
         End Sub
         Public Sub New(x As Double, y As Double, text As String)
@@ -1554,6 +1600,33 @@ Namespace WMDraw
             p_fontSize.height = fontSize
             p_fontSize.Reference = fontSizeReference
         End Sub
+        Public Property angle() As Double
+            Get
+                Return p_angle
+            End Get
+            Set(value As Double)
+                p_angle = value
+            End Set
+        End Property
+
+        Public Property fontSize() As size
+            Get
+                Return p_fontSize
+            End Get
+            Set(value As size)
+                p_fontSize = value
+            End Set
+        End Property
+
+        Public Property position() As Point
+            Get
+                Return p_position
+            End Get
+            Set(value As Point)
+                p_position = value
+            End Set
+        End Property
+
         ''' <summary>
         ''' Text to be written
         ''' </summary>
@@ -1564,31 +1637,6 @@ Namespace WMDraw
             End Get
             Set(value As String)
                 p_text = value
-            End Set
-        End Property
-        Public Property fontSize() As size
-            Get
-                Return p_fontSize
-            End Get
-            Set(value As size)
-                p_fontSize = value
-            End Set
-        End Property
-
-        Public Property angle() As Double
-            Get
-                Return p_angle
-            End Get
-            Set(value As Double)
-                p_angle = value
-            End Set
-        End Property
-        Public Property position() As Point
-            Get
-                Return p_position
-            End Get
-            Set(value As Point)
-                p_position = value
             End Set
         End Property
         Public Property zIndex As Long Implements Drawable.zIndex
@@ -1608,6 +1656,21 @@ Namespace WMDraw
                 p_pen = value
             End Set
         End Property
+
+        Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
+            Dim r(3) As Double
+            'todo: somehow determine text size 
+
+            r(0) = Me.position.x
+            r(1) = Me.position.y
+            r(2) = Me.position.x
+            r(3) = Me.position.y
+            Return r
+        End Function
+
+        Public Function CompareTo(other As Drawable) As Integer Implements IComparable(Of Drawable).CompareTo
+            'Throw New NotImplementedException()
+        End Function
 
         Public Sub draw(contextobject As ContextObject, contextCoordinatesDelegate As Drawable.contextCoordinates, Optional contextSizeDelegate As Drawable.contextSize = Nothing) Implements Drawable.draw
             If TypeOf contextobject.Item Is System.Windows.Controls.Canvas Then
@@ -1643,21 +1706,6 @@ Namespace WMDraw
                 Throw New NotImplementedException()
             End If
         End Sub
-
-        Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
-            Dim r(3) As Double
-            'todo: somehow determine text size 
-
-            r(0) = Me.position.x
-            r(1) = Me.position.y
-            r(2) = Me.position.x
-            r(3) = Me.position.y
-            Return r
-        End Function
-
-        Public Function CompareTo(other As Drawable) As Integer Implements IComparable(Of Drawable).CompareTo
-            'Throw New NotImplementedException()
-        End Function
     End Class
 
 #End Region
@@ -1665,67 +1713,53 @@ Namespace WMDraw
     <ComVisible(False)>
     Public Class ForceArrow
         Implements Drawable
-        '
-        ' todo: Create a force or arrow drawable and a Moment drawable
-        '
-        Public Enum forceDirections
-            ArrowAtTip
-            ArrowAtBottom
-        End Enum
-
-        Public Enum forceTypes
-            normalForce
-            resistanceForce
-        End Enum
-
-        Public Enum endPointTypes
-            none
-            circle
-            cross
-        End Enum
-
-        Public Enum arrowTipTypes
-            defaultForceTip
-            halfTipLeft
-            halfTipRight
-            directionIndicatorLeft
-            directionIndicatorRight
-        End Enum
+        Const DEFAULT_ARROW_HEIGHT_MM As Double = 5
 
         Const DEFAULT_ARROW_WIDTH_MM As Double = 3
-        Const DEFAULT_ARROW_HEIGHT_MM As Double = 5
 
         Const DEFAULT_FORCE_SIZE_MM As Double = 10
 
-        Private p_pen As pen
-        Private p_zIndex As Long
-
-        Private p_tipPoint As New Point
-        Private p_Offset As New size
-
-        Private p_caption As String
+        Private p_angle As Double
 
         Private p_arrowSize As New size
 
-        Private p_maxSize As New size
-
-        Private p_Fx As Double                  ' input Fx
-        Private p_Fy As Double                  ' input Fy
-        Private p_inputFxFy As Boolean
-
-        Private p_F As Double                   ' input F
-        Private p_angle As Double               ' input alpha
-        Private p_inputFAlpha As Boolean
-
-        Private p_maximumForce As Double
-        Private p_isMaximumForceDefined As Boolean
-
-        Private p_ForceType As forceTypes
         Private p_ArrowTipType As arrowTipTypes
+
+        Private p_caption As String
+
+        Private p_endPointDisplay As WMDraw.PointDisplay
+
+        Private p_F As Double
 
         Private p_forceDirection As forceDirections
 
-        Private p_endPointDisplay As WMDraw.PointDisplay
+        Private p_ForceType As forceTypes
+
+        Private p_Fx As Double
+
+        ' input Fx
+        Private p_Fy As Double
+
+        ' input F
+        ' input alpha
+        Private p_inputFAlpha As Boolean
+
+        ' input Fy
+        Private p_inputFxFy As Boolean
+
+        Private p_isMaximumForceDefined As Boolean
+
+        Private p_maximumForce As Double
+
+        Private p_maxSize As New size
+
+        Private p_Offset As New size
+
+        Private p_pen As pen
+
+        Private p_tipPoint As New Point
+
+        Private p_zIndex As Long
 
         Sub New()
             ' default force size
@@ -1745,6 +1779,7 @@ Namespace WMDraw
 
 
         End Sub
+
         ''' <summary>
         ''' new Force Arrow
         ''' </summary>
@@ -1771,6 +1806,77 @@ Namespace WMDraw
             Me.maximumForce = maxF
         End Sub
 
+        Public Enum arrowTipTypes
+            defaultForceTip
+            halfTipLeft
+            halfTipRight
+            directionIndicatorLeft
+            directionIndicatorRight
+        End Enum
+
+        Public Enum endPointTypes
+            none
+            circle
+            cross
+        End Enum
+
+        '
+        ' todo: Create a force or arrow drawable and a Moment drawable
+        '
+        Public Enum forceDirections
+            ArrowAtTip
+            ArrowAtBottom
+        End Enum
+
+        Public Enum forceTypes
+            normalForce
+            resistanceForce
+        End Enum
+        ''' <summary>
+        ''' Angle in degrees
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property angle() As Double
+            Get
+                If p_inputFAlpha Then
+                    Return p_angle
+                Else
+                    Return myMath.degrees(Math.Atan2(Fy, Fx))
+                End If
+            End Get
+            Set(value As Double)
+                p_angle = value
+                p_inputFxFy = False
+                p_inputFAlpha = True
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Arrow Size
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property arrowSize As size
+            Get
+                Return p_arrowSize
+            End Get
+            Set(value As size)
+                p_arrowSize = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Arrow Tip Type
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property ArrowTipType As arrowTipTypes
+            Get
+                Return p_ArrowTipType
+            End Get
+            Set(value As arrowTipTypes)
+                p_ArrowTipType = value
+            End Set
+        End Property
+
         ''' <summary>
         ''' Caption (replacements: {0} by F, {1} by angle, {2} by Fx, {3} by Fy)
         ''' </summary>
@@ -1784,28 +1890,60 @@ Namespace WMDraw
             End Set
         End Property
         ''' <summary>
-        ''' Force tip point
+        ''' EndPoint Tip
         ''' </summary>
         ''' <returns></returns>
-        Public Property tipPoint As Point
+        Public Property endPointDisplay As WMDraw.PointDisplay
             Get
-                Return p_tipPoint
+                Return p_endPointDisplay
             End Get
-            Set(value As Point)
-                p_tipPoint = value
+            Set(value As WMDraw.PointDisplay)
+                p_endPointDisplay = value
             End Set
         End Property
 
         ''' <summary>
-        ''' Force tip point Offset Vector
+        ''' Resulting force (in angle direction)
         ''' </summary>
         ''' <returns></returns>
-        Public Property offset As size
+        Public Property F() As Double
             Get
-                Return p_Offset
+                If p_inputFAlpha Then
+                    Return p_F
+                Else
+                    Return Math.Sqrt(Fx ^ 2 + Fy ^ 2)
+                End If
             End Get
-            Set(value As size)
-                p_Offset = value
+            Set(value As Double)
+                p_F = value
+                p_inputFxFy = False
+                p_inputFAlpha = True
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Force Direction
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property ForceDirection As forceDirections
+            Get
+                Return p_forceDirection
+            End Get
+            Set(value As forceDirections)
+                p_forceDirection = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Force Type
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property ForceType As forceTypes
+            Get
+                Return p_ForceType
+            End Get
+            Set(value As forceTypes)
+                p_ForceType = value
             End Set
         End Property
 
@@ -1826,6 +1964,7 @@ Namespace WMDraw
                 p_inputFAlpha = False
             End Set
         End Property
+
         '
         ' force in y-direction
         '
@@ -1843,42 +1982,7 @@ Namespace WMDraw
                 p_inputFAlpha = False
             End Set
         End Property
-        ''' <summary>
-        ''' Resulting force (in angle direction)
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property F() As Double
-            Get
-                If p_inputFAlpha Then
-                    Return p_F
-                Else
-                    Return Math.Sqrt(Fx ^ 2 + Fy ^ 2)
-                End If
-            End Get
-            Set(value As Double)
-                p_F = value
-                p_inputFxFy = False
-                p_inputFAlpha = True
-            End Set
-        End Property
-        ''' <summary>
-        ''' Angle in degrees
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property angle() As Double
-            Get
-                If p_inputFAlpha Then
-                    Return p_angle
-                Else
-                    Return myMath.degrees(Math.Atan2(Fy, Fx))
-                End If
-            End Get
-            Set(value As Double)
-                p_angle = value
-                p_inputFxFy = False
-                p_inputFAlpha = True
-            End Set
-        End Property
+
         ''' <summary>
         ''' Maximum Force
         ''' </summary>
@@ -1896,6 +2000,20 @@ Namespace WMDraw
                 p_isMaximumForceDefined = True
             End Set
         End Property
+
+        ''' <summary>
+        ''' maximum Force size 
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property MaximumSize() As size
+            Get
+                Return p_maxSize
+            End Get
+            Set(value As size)
+                p_maxSize = value
+            End Set
+        End Property
+
         ''' <summary>
         ''' maximum Force size
         ''' </summary>
@@ -1909,78 +2027,20 @@ Namespace WMDraw
                 p_maxSize.height = value
             End Set
         End Property
+
         ''' <summary>
-        ''' maximum Force size 
+        ''' Force tip point Offset Vector
         ''' </summary>
         ''' <returns></returns>
-        Public Property MaximumSize() As size
+        Public Property offset As size
             Get
-                Return p_maxSize
+                Return p_Offset
             End Get
             Set(value As size)
-                p_maxSize = value
+                p_Offset = value
             End Set
         End Property
-        ''' <summary>
-        ''' Force Type
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property ForceType As forceTypes
-            Get
-                Return p_ForceType
-            End Get
-            Set(value As forceTypes)
-                p_ForceType = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Arrow Tip Type
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property ArrowTipType As arrowTipTypes
-            Get
-                Return p_ArrowTipType
-            End Get
-            Set(value As arrowTipTypes)
-                p_ArrowTipType = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Force Direction
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property ForceDirection As forceDirections
-            Get
-                Return p_forceDirection
-            End Get
-            Set(value As forceDirections)
-                p_forceDirection = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' EndPoint Tip
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property endPointDisplay As WMDraw.PointDisplay
-            Get
-                Return p_endPointDisplay
-            End Get
-            Set(value As WMDraw.PointDisplay)
-                p_endPointDisplay = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Arrow Size
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property arrowSize As size
-            Get
-                Return p_arrowSize
-            End Get
-            Set(value As size)
-                p_arrowSize = value
-            End Set
-        End Property
+
         Public Property pen As pen Implements Drawable.pen
             Get
                 Return p_pen
@@ -1990,6 +2050,18 @@ Namespace WMDraw
             End Set
         End Property
 
+        ''' <summary>
+        ''' Force tip point
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property tipPoint As Point
+            Get
+                Return p_tipPoint
+            End Get
+            Set(value As Point)
+                p_tipPoint = value
+            End Set
+        End Property
         Public Property zIndex As Long Implements Drawable.zIndex
             Get
                 Return p_zIndex
@@ -2000,7 +2072,26 @@ Namespace WMDraw
         End Property
 
         Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
-            Return Me.p_tipPoint.boundingRectangle()
+            Dim r(3) As Double
+            myMath.includeInBoundingRectangle(r, Me.tipPoint)
+            Return r
+        End Function
+
+        ''' <summary>
+        ''' CompareTo as implementation of IComparable
+        ''' </summary>
+        ''' <param name="other"></param>
+        ''' <returns></returns>
+        Public Function CompareTo(ByVal other As Drawable) As Integer Implements System.IComparable(Of Drawable).CompareTo
+            If p_zIndex = other.zIndex Then
+                Return 0
+            Else
+                If p_zIndex < other.zIndex Then
+                    Return -1
+                Else
+                    Return 1
+                End If
+            End If
         End Function
 
         ''' <summary>
@@ -2029,8 +2120,7 @@ Namespace WMDraw
                     '
                     ' Force
                     '
-                    pTip = contextCoordinatesDelegate(Me.p_tipPoint)
-
+                    pTip = contextCoordinatesDelegate(Me.tipPoint)
                     fSize = contextSizeDelegate(Me.p_maxSize)
                     arrowSize1 = contextSizeDelegate(Me.arrowSize)
 
@@ -2267,27 +2357,6 @@ Namespace WMDraw
             End If
 
         End Sub
-
-
-
-
-        ''' <summary>
-        ''' CompareTo as implementation of IComparable
-        ''' </summary>
-        ''' <param name="other"></param>
-        ''' <returns></returns>
-        Public Function CompareTo(ByVal other As Drawable) As Integer Implements System.IComparable(Of Drawable).CompareTo
-            If p_zIndex = other.zIndex Then
-                Return 0
-            Else
-                If p_zIndex < other.zIndex Then
-                    Return -1
-                Else
-                    Return 1
-                End If
-            End If
-        End Function
-
     End Class
 
     ''' <summary>
@@ -2296,32 +2365,28 @@ Namespace WMDraw
     <ComVisible(False)>
     Public Class MomentArc
         Implements Drawable
+        Const DEFAULT_ARROW_HEIGHT_MM As Double = 5
+
         '
         ' todo: Create a force or arrow drawable and a Moment drawable
         '
         Const DEFAULT_ARROW_WIDTH_MM As Double = 3
-        Const DEFAULT_ARROW_HEIGHT_MM As Double = 5
-
+        Const DEFAULT_END_ANGLE As Double = 150
         Const DEFAULT_RADIUS_MM As Double = 8
 
         Const DEFAULT_START_ANGLE As Double = 30
-        Const DEFAULT_END_ANGLE As Double = 150
-
-        Private p_pen As pen
-        Private p_zIndex As Long
-
-        Private p_midPoint As New Point
-        Private p_Radius As New size
-        Private p_StartAngle As Double
-        Private p_EndAngle As Double
-
-        Private p_caption As String
-
         ''' <summary>
         ''' Arrow Size
         ''' </summary>
         Private p_arrowSize As New size
 
+        Private p_caption As String
+        Private p_EndAngle As Double
+        Private p_midPoint As New Point
+        Private p_pen As pen
+        Private p_Radius As New size
+        Private p_StartAngle As Double
+        Private p_zIndex As Long
         Sub New()
             Me.midPoint = New Point
             Me.p_StartAngle = DEFAULT_START_ANGLE
@@ -2388,6 +2453,202 @@ Namespace WMDraw
             Me.p_arrowSize.Reference = Reference.contextMillimeters
 
         End Sub
+
+        ''' <summary>
+        ''' Arrow Size
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property arrowSize As size
+            Get
+                Return p_arrowSize
+            End Get
+            Set(value As size)
+                p_arrowSize = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Caption
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property caption As String
+            Get
+                Return p_caption
+            End Get
+            Set(value As String)
+                p_caption = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' End Angle
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property endAngle As Double
+            Get
+                Return p_EndAngle
+            End Get
+            Set(value As Double)
+                p_EndAngle = value
+                If p_StartAngle > p_EndAngle Then
+                    Dim tmp As Double
+                    tmp = p_StartAngle
+                    p_StartAngle = p_EndAngle
+                    p_EndAngle = tmp
+                End If
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Mid-Point
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property midPoint As Point
+            Get
+                Return p_midPoint
+            End Get
+            Set(value As Point)
+                p_midPoint = value
+            End Set
+        End Property
+
+        Public Property pen As pen Implements Drawable.pen
+            Get
+                Return p_pen
+            End Get
+            Set(value As pen)
+                p_pen = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Radius
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property Radius As Double
+            Get
+                Return p_Radius.max
+            End Get
+            Set(value As Double)
+                p_Radius.width = value
+                p_Radius.height = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Radius Reference
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property RadiusReference As Reference
+            Get
+                Return p_Radius.Reference
+            End Get
+            Set(value As Reference)
+                p_Radius.Reference = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Start Angle
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property startAngle As Double
+            Get
+                Return p_StartAngle
+            End Get
+            Set(value As Double)
+                p_StartAngle = value
+                If p_EndAngle < p_StartAngle Then
+                    Dim tmp As Double
+                    tmp = p_StartAngle
+                    p_EndAngle = p_StartAngle
+                    p_StartAngle = tmp
+                End If
+
+            End Set
+        End Property
+
+        Public Property zIndex As Long Implements Drawable.zIndex
+            Get
+                Return p_zIndex
+            End Get
+            Set(value As Long)
+                p_zIndex = value
+            End Set
+        End Property
+
+        Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
+
+            Dim r(3) As Double
+
+            Dim p1 As New Point
+            Dim p2 As New Point
+
+            Dim p(2) As Point
+
+            Dim alpha(2) As Double
+
+            Dim Q(1) As Byte
+            alpha(0) = startAngle
+            alpha(1) = endAngle
+            '
+            ' Quadrants
+            '
+            For i As Integer = 0 To 1
+                Q(i) = CByte(Math.Floor(alpha(i) / 90) Mod 4)
+            Next
+            '
+            ' sort Quadrants
+            '
+            If Q(0) > Q(1) Then
+                Dim tmp As Byte
+                tmp = Q(1)
+                Q(1) = Q(0)
+                Q(0) = tmp
+            End If
+
+            alpha(0) = Me.startAngle
+            alpha(1) = Me.endAngle
+
+            If Q(0) <> Q(1) Then
+                alpha(2) = (Q(1) - 1) * 90
+            Else
+                alpha(2) = (alpha(0) + alpha(1)) / 2
+            End If
+            '
+            ' todo: size has to be converted if not world coords
+            '
+            If midPoint.coordinateReference = Reference.world And p_Radius.Reference = Reference.world Then
+                For i As Integer = 0 To 2
+                    p(i) = New Point
+                    p(i).x = midPoint.x + p_Radius.max * Math.Cos(myMath.radians(alpha(i)))
+                    p(i).y = midPoint.y + p_Radius.max * Math.Sin(myMath.radians(alpha(i)))
+                    myMath.includeInBoundingRectangle(r, p(i))
+                Next
+                Return r
+            Else
+                Return Me.midPoint.boundingRectangle()
+            End If
+
+
+        End Function
+
+        ''' <summary>
+        ''' CompareTo as implementation of IComparable
+        ''' </summary>
+        ''' <param name="other"></param>
+        ''' <returns></returns>
+        Public Function CompareTo(ByVal other As Drawable) As Integer Implements System.IComparable(Of Drawable).CompareTo
+            If p_zIndex = other.zIndex Then
+                Return 0
+            Else
+                If p_zIndex < other.zIndex Then
+                    Return -1
+                Else
+                    Return 1
+                End If
+            End If
+        End Function
 
         ''' <summary>
         ''' place on canvas
@@ -2526,167 +2787,69 @@ Namespace WMDraw
             End If
 
         End Sub
+    End Class
+#End Region
 
-        Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
+#Region "Polygon Class"
+    Public Class Polygon
+        Implements Drawable
 
-            Dim r(3) As Double
+        Private p_pen As pen
+        Private p_points As New List(Of Point)
+        Private p_zIndex As Long
+        Private p_closed As Boolean
+        Private p_fill As fill
 
-            Dim p1 As New Point
-            Dim p2 As New Point
-
-            Dim p(2) As Point
-
-            Dim alpha(2) As Double
-
-            Dim Q(1) As Byte
-            alpha(0) = startAngle
-            alpha(1) = endAngle
-            '
-            ' Quadrants
-            '
-            For i As Integer = 0 To 1
-                Q(i) = CByte(Math.Floor(alpha(i) / 90) Mod 4)
-            Next
-            '
-            ' sort Quadrants
-            '
-            If Q(0) > Q(1) Then
-                Dim tmp As Byte
-                tmp = Q(1)
-                Q(1) = Q(0)
-                Q(0) = tmp
+        Public Sub New()
+            p_points = New List(Of Point)
+            p_pen = New pen
+            p_fill = New fill
+        End Sub
+        ''' <summary>
+        ''' close polygon by adding first point to the end of points
+        ''' </summary>
+        Public Sub close()
+            If Not Me.closed Then
+                Me.points.Add(Me.points.First)
             End If
-
-            alpha(0) = Me.startAngle
-            alpha(1) = Me.endAngle
-
-            If Q(0) <> Q(1) Then
-                alpha(2) = (Q(1) - 1) * 90
-            Else
-                alpha(2) = (alpha(0) + alpha(1)) / 2
-            End If
-            '
-            ' todo: size has to be converted if not world coords
-            '
-            If midPoint.coordinateReference = Reference.world And p_Radius.Reference = Reference.world Then
-                For i As Integer = 0 To 2
-                    p(i) = New Point
-                    p(i).x = midPoint.x + p_Radius.max * Math.Cos(myMath.radians(alpha(i)))
-                    p(i).y = midPoint.y + p_Radius.max * Math.Sin(myMath.radians(alpha(i)))
-                    myMath.includeInBoundingRectangle(r, p(i))
-                Next
-                Return r
-            Else
-                Return Me.midPoint.boundingRectangle()
-            End If
-
-
-        End Function
+        End Sub
         ''' <summary>
-        ''' Caption
+        ''' is polygon closed?
         ''' </summary>
         ''' <returns></returns>
-        Public Property caption As String
+        Public ReadOnly Property closed()
             Get
-                Return p_caption
+                Return (Me.points.First = Me.points.Last)
             End Get
-            Set(value As String)
-                p_caption = value
-            End Set
         End Property
         ''' <summary>
-        ''' Mid-Point
+        ''' Fill
         ''' </summary>
         ''' <returns></returns>
-        Public Property midPoint As Point
+        Public Property fill As fill
             Get
-                Return p_midPoint
+                Return p_fill
             End Get
-            Set(value As Point)
-                p_midPoint = value
+            Set(value As fill)
+                p_fill = value
             End Set
         End Property
 
-        ''' <summary>
-        ''' Radius
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property Radius As Double
-            Get
-                Return p_Radius.max
-            End Get
-            Set(value As Double)
-                p_Radius.width = value
-                p_Radius.height = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Radius Reference
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property RadiusReference As Reference
-            Get
-                Return p_Radius.Reference
-            End Get
-            Set(value As Reference)
-                p_Radius.Reference = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Start Angle
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property startAngle As Double
-            Get
-                Return p_StartAngle
-            End Get
-            Set(value As Double)
-                p_StartAngle = value
-                If p_EndAngle < p_StartAngle Then
-                    Dim tmp As Double
-                    tmp = p_StartAngle
-                    p_EndAngle = p_StartAngle
-                    p_StartAngle = tmp
-                End If
-
-            End Set
-        End Property
-        ''' <summary>
-        ''' End Angle
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property endAngle As Double
-            Get
-                Return p_EndAngle
-            End Get
-            Set(value As Double)
-                p_EndAngle = value
-                If p_StartAngle > p_EndAngle Then
-                    Dim tmp As Double
-                    tmp = p_StartAngle
-                    p_StartAngle = p_EndAngle
-                    p_EndAngle = tmp
-                End If
-            End Set
-        End Property
-        ''' <summary>
-        ''' Arrow Size
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property arrowSize As size
-            Get
-                Return p_arrowSize
-            End Get
-            Set(value As size)
-                p_arrowSize = value
-            End Set
-        End Property
         Public Property pen As pen Implements Drawable.pen
             Get
                 Return p_pen
             End Get
             Set(value As pen)
                 p_pen = value
+            End Set
+        End Property
+
+        Public Property points As List(Of Point)
+            Get
+                Return p_points
+            End Get
+            Set(value As List(Of Point))
+                p_points = value
             End Set
         End Property
 
@@ -2699,25 +2862,62 @@ Namespace WMDraw
             End Set
         End Property
 
+        Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
+            Dim r(3) As Double
 
-        ''' <summary>
-        ''' CompareTo as implementation of IComparable
-        ''' </summary>
-        ''' <param name="other"></param>
-        ''' <returns></returns>
-        Public Function CompareTo(ByVal other As Drawable) As Integer Implements System.IComparable(Of Drawable).CompareTo
-            If p_zIndex = other.zIndex Then
-                Return 0
-            Else
-                If p_zIndex < other.zIndex Then
-                    Return -1
-                Else
-                    Return 1
-                End If
-            End If
+            For Each myPoint In Me.points
+                myMath.includeInBoundingRectangle(r, myPoint.x, myPoint.y)
+            Next
+            Return r
         End Function
 
+        Public Function CompareTo(other As Drawable) As Integer Implements IComparable(Of Drawable).CompareTo
+            Throw New NotImplementedException()
+        End Function
+
+        Public Sub draw(contextobject As ContextObject, contextCoordinatesDelegate As Drawable.contextCoordinates, Optional contextSizeDelegate As Drawable.contextSize = Nothing) Implements Drawable.draw
+
+            If TypeOf contextobject.Item Is System.Windows.Controls.Canvas Then
+                Dim myCanvas As New System.Windows.Controls.Canvas
+                myCanvas = TryCast(contextobject.Item, System.Windows.Controls.Canvas)
+                With myCanvas
+                    Dim polygon1 As New System.Windows.Shapes.Polygon
+                    With polygon1
+                        Dim p1 As New Point
+                        Dim t As size
+
+                        t = contextSizeDelegate(Me.pen.size)
+
+                        For Each myPoint In Me.points
+                            p1 = contextCoordinatesDelegate(myPoint)
+                            .Points.Add(New Windows.Point(x:=p1.x, y:=p1.y))
+                        Next
+
+                        .Stroke = Me.pen.stroke
+                        .StrokeThickness = t.width
+                        .StrokeDashArray = Me.pen.dashArray
+                        .Fill = fill.Brush()
+
+                        If t.width < 1 Then t.width = 1
+
+                    End With
+
+                    myCanvas.Children.Add(polygon1)
+                End With
+            Else
+                Throw New NotImplementedException()
+            End If
+
+        End Sub
+
+        Public Sub rotate(center As Point, angle As Double)
+            For i = 0 To Me.points.Count - 1
+                Dim myPoint As Point = points.ElementAt(i)
+                points(i) = myPoint.rotate(center, angle * Math.PI / 180)
+            Next
+        End Sub
     End Class
+
 #End Region
 #Region "Line Class"
     ''' <summary>
@@ -2727,16 +2927,18 @@ Namespace WMDraw
     Public Class Line
         Implements Drawable
 
-        Private p_pen As pen
-        Private p_zIndex As Long
-        ''' <summary>
-        ''' Start Point
-        ''' </summary>
-        Private p_startPoint As Point
         ''' <summary>
         ''' End Point
         ''' </summary>
         Private p_endPoint As Point
+
+        Private p_pen As pen
+        ''' <summary>
+        ''' Start Point
+        ''' </summary>
+        Private p_startPoint As Point
+
+        Private p_zIndex As Long
         Sub New()
             Me.startPoint = New Point
             Me.endPoint = New Point
@@ -2774,52 +2976,47 @@ Namespace WMDraw
             Me.endPoint = New Point(endX, endY, coordinateReference)
         End Sub
 
-        ''' <summary>
-        ''' place on canvas
-        ''' </summary>
-        ''' <param name="contextobject"></param>
-        ''' <param name="contextCoordinatesDelegate"></param>
-        Public Overridable Sub draw(contextobject As ContextObject, contextCoordinatesDelegate As Drawable.contextCoordinates, Optional contextSizeDelegate As Drawable.contextSize = Nothing) Implements Drawable.draw
+        Public Property endPoint As Point
+            Get
+                Return p_endPoint
+            End Get
+            Set(value As Point)
+                p_endPoint = value
+            End Set
+        End Property
 
-            If TypeOf contextobject.Item Is System.Windows.Controls.Canvas Then
-                Dim myCanvas As New System.Windows.Controls.Canvas
-                myCanvas = TryCast(contextobject.Item, System.Windows.Controls.Canvas)
-                With myCanvas
-                    Dim line1 As New System.Windows.Shapes.Line
-                    With line1
-                        Dim p1 As New Point
-                        Dim p2 As New Point
-                        Dim t As size
+        Public Property pen As pen Implements Drawable.pen
+            Get
+                Return p_pen
+            End Get
+            Set(value As pen)
+                p_pen = value
+            End Set
+        End Property
 
-                        '
-                        ' calculate coordinates in local system
-                        ' by a call-back to the calling drawing object
-                        '
-                        p1 = contextCoordinatesDelegate(startPoint)
-                        p2 = contextCoordinatesDelegate(endPoint)
+        Public Property startPoint As Point
+            Get
+                Return p_startPoint
+            End Get
+            Set(value As Point)
+                p_startPoint = value
+            End Set
+        End Property
 
-                        t = contextSizeDelegate(Me.pen.size)
-                        If t.width < 1 Then t.width = 1
+        Public Property zIndex As Long Implements Drawable.zIndex
+            Get
+                Return p_zIndex
+            End Get
+            Set(value As Long)
+                p_zIndex = value
+            End Set
+        End Property
 
-#If dp Then
-                        Debug.Print("Line (" & String.Format("({0:F2}/{1:F2}) - ({2:F2}/{3:F2})", p1.x, p1.y, p2.x, p2.y))
-#End If
-                        .X1 = p1.x
-                        .Y1 = p1.y
-                        .X2 = p2.x
-                        .Y2 = p2.y
-                        .Stroke = Me.pen.stroke
-                        .StrokeThickness = t.width
-                        .StrokeDashArray = Me.pen.dashArray
-                    End With
-
-                    myCanvas.Children.Add(line1)
-                End With
-            Else
-                Throw New NotImplementedException()
-            End If
-
-        End Sub
+        Public ReadOnly Property innerPoint(xi As Double) As Point
+            Get
+                innerPoint = New Point(startPoint.x + (endPoint.x - startPoint.x) * xi, startPoint.y + (endPoint.y - startPoint.y) * xi)
+            End Get
+        End Property
 
         Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
 
@@ -2853,49 +3050,6 @@ Namespace WMDraw
             Return r
         End Function
 
-        Public ReadOnly Property innerPoint(xi As Double) As Point
-            Get
-                innerPoint = New Point(startPoint.x + (endPoint.x - startPoint.x) * xi, startPoint.y + (endPoint.y - startPoint.y) * xi)
-            End Get
-        End Property
-
-        Public Property startPoint As Point
-            Get
-                Return p_startPoint
-            End Get
-            Set(value As Point)
-                p_startPoint = value
-            End Set
-        End Property
-
-        Public Property endPoint As Point
-            Get
-                Return p_endPoint
-            End Get
-            Set(value As Point)
-                p_endPoint = value
-            End Set
-        End Property
-
-        Public Property pen As pen Implements Drawable.pen
-            Get
-                Return p_pen
-            End Get
-            Set(value As pen)
-                p_pen = value
-            End Set
-        End Property
-
-        Public Property zIndex As Long Implements Drawable.zIndex
-            Get
-                Return p_zIndex
-            End Get
-            Set(value As Long)
-                p_zIndex = value
-            End Set
-        End Property
-
-
         ''' <summary>
         ''' CompareTo as implementation of IComparable
         ''' </summary>
@@ -2913,6 +3067,55 @@ Namespace WMDraw
             End If
         End Function
 
+        ''' <summary>
+        ''' place on canvas
+        ''' </summary>
+        ''' <param name="contextobject"></param>
+        ''' <param name="contextCoordinatesDelegate"></param>
+        Public Overridable Sub draw(contextobject As ContextObject, contextCoordinatesDelegate As Drawable.contextCoordinates, Optional contextSizeDelegate As Drawable.contextSize = Nothing) Implements Drawable.draw
+
+            If TypeOf contextobject.Item Is System.Windows.Controls.Canvas Then
+                Dim myCanvas As New System.Windows.Controls.Canvas
+                myCanvas = TryCast(contextobject.Item, System.Windows.Controls.Canvas)
+                With myCanvas
+                    Dim line1 As New System.Windows.Shapes.Line
+                    With line1
+                        Dim p1 As New Point
+                        Dim p2 As New Point
+                        Dim t As size
+
+                        '
+                        ' calculate coordinates in local system
+                        ' by a call-back to the calling drawing object
+                        '
+                        p1 = contextCoordinatesDelegate(startPoint)
+                        p2 = contextCoordinatesDelegate(endPoint)
+
+                        t = contextSizeDelegate(Me.pen.size)
+                        If t.width < 1 Then t.width = 1
+
+                        .X1 = p1.x
+                        .Y1 = p1.y
+                        .X2 = p2.x
+                        .Y2 = p2.y
+                        .Stroke = Me.pen.stroke
+                        .StrokeThickness = t.width
+                        .StrokeDashArray = Me.pen.dashArray
+                    End With
+
+                    myCanvas.Children.Add(line1)
+                End With
+            Else
+                Throw New NotImplementedException()
+            End If
+
+        End Sub
+
+        Public Function rotate(center As Point, angle As Double) As Line
+            rotate = Me
+            rotate.startPoint = Me.startPoint.rotate(center, angle)
+            rotate.endPoint = Me.endPoint.rotate(center, angle)
+        End Function
     End Class
 #End Region
 #Region "Rectangle Class"
@@ -2923,19 +3126,19 @@ Namespace WMDraw
     Public Class Rectangle
         Implements Drawable
 
-        Private p_pen As pen
-        Private p_fill As fill
-
-        Private p_zIndex As Long
-        ''' <summary>
-        ''' Start Point
-        ''' </summary>
-        Private p_startPoint As Point
         ''' <summary>
         ''' End Point
         ''' </summary>
         Private p_endPoint As Point
 
+        Private p_fill As fill
+        Private p_pen As pen
+        ''' <summary>
+        ''' Start Point
+        ''' </summary>
+        Private p_startPoint As Point
+
+        Private p_zIndex As Long
         Sub New()
             Me.startPoint = New Point
             Me.endPoint = New Point
@@ -2978,60 +3181,83 @@ Namespace WMDraw
             Me.startPoint = New Point(startX, startY, coordinateReference)
             Me.endPoint = New Point(endX, endY, coordinateReference)
         End Sub
+        Public Function toPolygon() As Polygon
+            Dim p As New Polygon
+            p.points.Add(New Point(Me.startPoint.x, Me.startPoint.y))
+            p.points.Add(New Point(Me.startPoint.x, Me.endPoint.y))
+            p.points.Add(New Point(Me.endPoint.x, Me.endPoint.y))
+            p.points.Add(New Point(Me.startPoint.y, Me.endPoint.y))
+            p.close()
+            Return p
+        End Function
+        Public Property endPoint As Point
+            Get
+                Return p_endPoint
+            End Get
+            Set(value As Point)
+                p_endPoint = value
+            End Set
+        End Property
 
-        ''' <summary>
-        ''' place on canvas
-        ''' </summary>
-        ''' <param name="contextobject"></param>
-        ''' <param name="contextCoordinatesDelegate"></param>
-        Public Overridable Sub draw(contextobject As ContextObject, contextCoordinatesDelegate As Drawable.contextCoordinates, Optional contextSizeDelegate As Drawable.contextSize = Nothing) Implements Drawable.draw
+        Public Property fill As fill
+            Get
+                Return p_fill
+            End Get
+            Set(value As fill)
+                p_fill = value
+            End Set
+        End Property
 
-            If TypeOf contextobject.Item Is System.Windows.Controls.Canvas Then
-                Dim myCanvas As New System.Windows.Controls.Canvas
-                myCanvas = TryCast(contextobject.Item, System.Windows.Controls.Canvas)
-                With myCanvas
-                    Dim rect1 As New System.Windows.Shapes.Rectangle
-                    With rect1
-                        Dim p1 As New Point
-                        Dim p2 As New Point
-                        Dim t As size
+        Public Property pen As pen Implements Drawable.pen
+            Get
+                Return p_pen
+            End Get
+            Set(value As pen)
+                p_pen = value
+            End Set
+        End Property
 
-                        '
-                        ' calculate coordinates in local system
-                        ' by a call-back to the calling drawing object
-                        '
-                        p1 = contextCoordinatesDelegate(startPoint)
-                        p2 = contextCoordinatesDelegate(endPoint)
+        Public Property startPoint As Point
+            Get
+                Return p_startPoint
+            End Get
+            Set(value As Point)
+                p_startPoint = value
+            End Set
+        End Property
 
-                        t = contextSizeDelegate(Me.pen.size)
-                        If t.width < 1 Then t.width = 1
+        Public Property zIndex As Long Implements Drawable.zIndex
+            Get
+                Return p_zIndex
+            End Get
+            Set(value As Long)
+                p_zIndex = value
+            End Set
+        End Property
 
-#If dp Then
-                        Debug.Print("Rectangle (" & String.Format("({0:F2}/{1:F2}) - ({2:F2}/{3:F2})", p1.x, p1.y, p2.x, p2.y))
-#End If
-                        .Width = Math.Abs(p2.x - p1.x)
-                        .Height = Math.Abs(p2.y - p1.y)
+        Private ReadOnly Property height()
+            Get
+                Return Math.Abs(endPoint.y - startPoint.y)
+            End Get
+        End Property
 
-                        'todo: offer fill solid and hatch
+        Private ReadOnly Property left()
+            Get
+                Return Math.Min(startPoint.x, endPoint.x)
+            End Get
+        End Property
 
-                        .Stroke = Nothing 'Me.pen.stroke
-                        .StrokeThickness = t.width
-                        .StrokeDashArray = Me.pen.dashArray
+        Private ReadOnly Property top()
+            Get
+                Return Math.Min(startPoint.y, endPoint.y)
+            End Get
+        End Property
 
-                        .Fill = fill.Brush()
-
-                        myCanvas.Children.Add(rect1)
-                        Windows.Controls.Canvas.SetLeft(rect1, Math.Min(p1.x, p2.x))
-                        Windows.Controls.Canvas.SetTop(rect1, Math.Min(p1.y, p2.y))
-                    End With
-
-
-                End With
-            Else
-                Throw New NotImplementedException()
-            End If
-
-        End Sub
+        Private ReadOnly Property width()
+            Get
+                Return Math.Abs(endPoint.x - startPoint.x)
+            End Get
+        End Property
 
         Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
 
@@ -3065,77 +3291,6 @@ Namespace WMDraw
             Return r
         End Function
 
-        Private ReadOnly Property width()
-            Get
-                Return Math.Abs(endPoint.x - startPoint.x)
-            End Get
-        End Property
-
-        Private ReadOnly Property height()
-            Get
-                Return Math.Abs(endPoint.y - startPoint.y)
-            End Get
-        End Property
-
-        Private ReadOnly Property top()
-            Get
-                Return Math.Min(startPoint.y, endPoint.y)
-            End Get
-        End Property
-
-        Private ReadOnly Property left()
-            Get
-                Return Math.Min(startPoint.x, endPoint.x)
-            End Get
-        End Property
-
-        Public Property startPoint As Point
-            Get
-                Return p_startPoint
-            End Get
-            Set(value As Point)
-                p_startPoint = value
-            End Set
-        End Property
-
-        Public Property endPoint As Point
-            Get
-                Return p_endPoint
-            End Get
-            Set(value As Point)
-                p_endPoint = value
-            End Set
-        End Property
-
-        Public Property pen As pen Implements Drawable.pen
-            Get
-                Return p_pen
-            End Get
-            Set(value As pen)
-                p_pen = value
-            End Set
-        End Property
-
-        Public Property fill As fill
-            Get
-                Return p_fill
-            End Get
-            Set(value As fill)
-                p_fill = value
-            End Set
-        End Property
-
-
-        Public Property zIndex As Long Implements Drawable.zIndex
-            Get
-                Return p_zIndex
-            End Get
-            Set(value As Long)
-                p_zIndex = value
-            End Set
-        End Property
-
-
         ''' <summary>
         ''' CompareTo as implementation of IComparable
         ''' </summary>
@@ -3153,6 +3308,56 @@ Namespace WMDraw
             End If
         End Function
 
+        ''' <summary>
+        ''' place on canvas
+        ''' </summary>
+        ''' <param name="contextobject"></param>
+        ''' <param name="contextCoordinatesDelegate"></param>
+        Public Overridable Sub draw(contextobject As ContextObject, contextCoordinatesDelegate As Drawable.contextCoordinates, Optional contextSizeDelegate As Drawable.contextSize = Nothing) Implements Drawable.draw
+
+            If TypeOf contextobject.Item Is System.Windows.Controls.Canvas Then
+                Dim myCanvas As New System.Windows.Controls.Canvas
+                myCanvas = TryCast(contextobject.Item, System.Windows.Controls.Canvas)
+                With myCanvas
+                    Dim rect1 As New System.Windows.Shapes.Rectangle
+                    With rect1
+                        Dim p1 As New Point
+                        Dim p2 As New Point
+                        Dim t As size
+
+                        '
+                        ' calculate coordinates in local system
+                        ' by a call-back to the calling drawing object
+                        '
+                        p1 = contextCoordinatesDelegate(startPoint)
+                        p2 = contextCoordinatesDelegate(endPoint)
+
+                        t = contextSizeDelegate(Me.pen.size)
+                        If t.width < 1 Then t.width = 1
+
+                        .Width = Math.Abs(p2.x - p1.x)
+                        .Height = Math.Abs(p2.y - p1.y)
+
+                        'todo: offer fill solid and hatch
+
+                        .Stroke = Nothing 'Me.pen.stroke
+                        .StrokeThickness = t.width
+                        .StrokeDashArray = Me.pen.dashArray
+
+                        .Fill = fill.Brush()
+
+                        myCanvas.Children.Add(rect1)
+                        Windows.Controls.Canvas.SetLeft(rect1, Math.Min(p1.x, p2.x))
+                        Windows.Controls.Canvas.SetTop(rect1, Math.Min(p1.y, p2.y))
+                    End With
+
+
+                End With
+            Else
+                Throw New NotImplementedException()
+            End If
+
+        End Sub
     End Class
 #End Region
 #Region "Screw Class"
@@ -3162,17 +3367,13 @@ Namespace WMDraw
     Public Class Screw
         Implements Drawable
 
+        Private p_angle As Double
+        Private p_caption As String
         Private p_HeadPosition As New Point
         Private p_l As Double
         Private p_lg As Double
-        Private p_angle As Double
-        Private p_caption As String
-
-
-        Private p_zIndex As Long
-
         Private p_pen As pen
-
+        Private p_zIndex As Long
         Public Property pen As pen Implements Drawable.pen
             Get
                 Return p_pen
@@ -3191,11 +3392,6 @@ Namespace WMDraw
             End Set
         End Property
 
-        Public Sub draw(contextobject As ContextObject, contextCoordinatesDelegate As Drawable.contextCoordinates, Optional contextSizeDelegate As Drawable.contextSize = Nothing) Implements Drawable.draw
-            Throw New NotImplementedException()
-            'todo: not implemented
-        End Sub
-
         Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
             Throw New NotImplementedException()
         End Function
@@ -3203,6 +3399,11 @@ Namespace WMDraw
         Public Function CompareTo(other As Drawable) As Integer Implements IComparable(Of Drawable).CompareTo
             Throw New NotImplementedException()
         End Function
+
+        Public Sub draw(contextobject As ContextObject, contextCoordinatesDelegate As Drawable.contextCoordinates, Optional contextSizeDelegate As Drawable.contextSize = Nothing) Implements Drawable.draw
+            Throw New NotImplementedException()
+            'todo: not implemented
+        End Sub
     End Class
 #End Region
 #Region "Support Class"
@@ -3213,40 +3414,19 @@ Namespace WMDraw
     Public Class Support
         Implements Drawable
 
+        Const SUPPORT_ANGLE_DEG As Double = 30
         Const SUPPORT_HEIGHT_MM As Double = 7
         Const SUPPORT_WIDTH_MM As Double = 7
-        Const SUPPORT_ANGLE_DEG As Double = 30
-
-        Private p_position As New Point
-        Private p_size As New size
         Private p_angle As Double
         Private p_caption As String
-
         ' stiffness values
         Private p_cx As Double
+
         Private p_cy As Double
-
-        Private p_zIndex As Long
-
         Private p_pen As pen
-
-        ''' <summary>
-        ''' Compare Z-Order
-        ''' </summary>
-        ''' <param name="other"></param>
-        ''' <returns></returns>
-        Public Function CompareTo(ByVal other As Drawable) As Integer Implements System.IComparable(Of Drawable).CompareTo
-            If p_zIndex = other.zIndex Then
-                Return 0
-            Else
-                If p_zIndex < other.zIndex Then
-                    Return -1
-                Else
-                    Return 1
-                End If
-            End If
-        End Function
-
+        Private p_position As New Point
+        Private p_size As New size
+        Private p_zIndex As Long
         ''' <summary>
         ''' New Support
         ''' </summary>
@@ -3266,6 +3446,7 @@ Namespace WMDraw
             End With
             p_angle = angle
         End Sub
+
         ''' <summary>
         ''' New Support
         ''' </summary>
@@ -3287,6 +3468,7 @@ Namespace WMDraw
             p_caption = caption
             p_angle = angle
         End Sub
+
         ''' <summary>
         ''' New Support
         ''' </summary>
@@ -3309,32 +3491,21 @@ Namespace WMDraw
             End With
             p_angle = angle
         End Sub
+
         ''' <summary>
-        ''' Position
+        ''' rotation angle in degrees
         ''' </summary>
         ''' <returns>
-        ''' Point
         ''' </returns>
-        Public Property position As Point
+        Public Property angle As Double
             Get
-                Return p_position
+                Return p_angle
             End Get
-            Set(value As Point)
-                p_position = value
+            Set(value As Double)
+                p_angle = value
             End Set
         End Property
-        ''' <summary>
-        ''' Size
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property size As size
-            Get
-                Return p_size
-            End Get
-            Set(value As size)
-                p_size = value
-            End Set
-        End Property
+
         ''' <summary>
         ''' Caption
         ''' </summary>
@@ -3349,19 +3520,88 @@ Namespace WMDraw
                 p_caption = value
             End Set
         End Property
+
         ''' <summary>
-        ''' rotation angle in degrees
+        ''' Pen
         ''' </summary>
-        ''' <returns>
-        ''' </returns>
-        Public Property angle As Double
+        ''' <returns></returns>
+        Public Property pen As pen Implements Drawable.pen
             Get
-                Return p_angle
+                Return p_pen
             End Get
-            Set(value As Double)
-                p_angle = value
+            Set(value As pen)
+                p_pen = value
             End Set
         End Property
+
+        ''' <summary>
+        ''' Position
+        ''' </summary>
+        ''' <returns>
+        ''' Point
+        ''' </returns>
+        Public Property position As Point
+            Get
+                Return p_position
+            End Get
+            Set(value As Point)
+                p_position = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Size
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property size As size
+            Get
+                Return p_size
+            End Get
+            Set(value As size)
+                p_size = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Z-Index
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property zIndex As Long Implements Drawable.zIndex
+            Get
+                Return p_zIndex
+            End Get
+            Set(value As Long)
+                p_zIndex = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Bounding Rectangle 
+        ''' </summary>
+        ''' 
+        ''' <returns>
+        ''' The bounding rectangle - momentarily only the position point
+        ''' </returns>
+        Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
+            Return Me.position.boundingRectangle()
+        End Function
+
+        ''' <summary>
+        ''' Compare Z-Order
+        ''' </summary>
+        ''' <param name="other"></param>
+        ''' <returns></returns>
+        Public Function CompareTo(ByVal other As Drawable) As Integer Implements System.IComparable(Of Drawable).CompareTo
+            If p_zIndex = other.zIndex Then
+                Return 0
+            Else
+                If p_zIndex < other.zIndex Then
+                    Return -1
+                Else
+                    Return 1
+                End If
+            End If
+        End Function
         ''' <summary>
         ''' Draw Support on destination device
         ''' </summary>
@@ -3452,40 +3692,6 @@ Namespace WMDraw
             End If
 
         End Sub
-        ''' <summary>
-        ''' Bounding Rectangle 
-        ''' </summary>
-        ''' 
-        ''' <returns>
-        ''' The bounding rectangle - momentarily only the position point
-        ''' </returns>
-        Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
-            Return Me.position.boundingRectangle()
-        End Function
-        ''' <summary>
-        ''' Z-Index
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property zIndex As Long Implements Drawable.zIndex
-            Get
-                Return p_zIndex
-            End Get
-            Set(value As Long)
-                p_zIndex = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Pen
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property pen As pen Implements Drawable.pen
-            Get
-                Return p_pen
-            End Get
-            Set(value As pen)
-                p_pen = value
-            End Set
-        End Property
     End Class
 
 #End Region
@@ -3498,15 +3704,12 @@ Namespace WMDraw
 
         Implements Drawable
 
-        Private p_pen As pen
-        Private p_fill As fill
-
-        Private p_zIndex As Long
-
-        Private p_midpoint As Point
-        Private p_radii As size
         Private p_angle As Double
-
+        Private p_fill As fill
+        Private p_midpoint As Point
+        Private p_pen As pen
+        Private p_radii As size
+        Private p_zIndex As Long
         Sub New()
             Me.midPoint = New Point
             Me.radii = New size
@@ -3535,6 +3738,96 @@ Namespace WMDraw
         End Sub
 
         ''' <summary>
+        ''' Rotation angle
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property angle() As Double
+            Get
+                Return p_angle
+            End Get
+            Set(value As Double)
+                p_angle = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Fill
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property fill As fill
+            Get
+                Return p_fill
+            End Get
+            Set(value As fill)
+                p_fill = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Mid-Point
+        ''' </summary>
+        ''' <returns>
+        ''' Point Object
+        ''' </returns>
+        Public Property midPoint As Point
+            Get
+                Return p_midpoint
+            End Get
+            Set(value As Point)
+                p_midpoint = value
+            End Set
+        End Property
+
+        Public Property pen As pen Implements Drawable.pen
+            Get
+                Return p_pen
+            End Get
+            Set(value As pen)
+                p_pen = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Radii
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property radii As size
+            Get
+                Return p_radii
+            End Get
+            Set(value As size)
+                p_radii = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Z-Index
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property zIndex As Long Implements Drawable.zIndex
+            Get
+                Return p_zIndex
+            End Get
+            Set(value As Long)
+                p_zIndex = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Bounding Rectangle
+        ''' </summary>
+        ''' 
+        ''' <returns></returns>
+        Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
+            Dim r(3) As Double
+            r(0) = Me.midPoint.x - Me.radii.width
+            r(1) = Me.midPoint.y - Me.radii.height
+            r(2) = Me.midPoint.x + Me.radii.width
+            r(3) = Me.midPoint.y + Me.radii.height
+            Return r
+        End Function
+
+        ''' <summary>
         ''' Compare z-Index
         ''' CompareTo as implementation of IComparable
         ''' </summary>
@@ -3551,66 +3844,6 @@ Namespace WMDraw
                 End If
             End If
         End Function
-        ''' <summary>
-        ''' Mid-Point
-        ''' </summary>
-        ''' <returns>
-        ''' Point Object
-        ''' </returns>
-        Public Property midPoint As Point
-            Get
-                Return p_midpoint
-            End Get
-            Set(value As Point)
-                p_midpoint = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Radii
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property radii As size
-            Get
-                Return p_radii
-            End Get
-            Set(value As size)
-                p_radii = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Rotation angle
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property angle() As Double
-            Get
-                Return p_angle
-            End Get
-            Set(value As Double)
-                p_angle = value
-            End Set
-        End Property
-
-        Public Property pen As pen Implements Drawable.pen
-            Get
-                Return p_pen
-            End Get
-            Set(value As pen)
-                p_pen = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Fill
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property fill As fill
-            Get
-                Return p_fill
-            End Get
-            Set(value As fill)
-                p_fill = value
-            End Set
-        End Property
-
         ''' <summary>
         ''' Draw Ellipse
         ''' </summary>
@@ -3667,32 +3900,6 @@ Namespace WMDraw
                 Throw New NotImplementedException()
             End If
         End Sub
-        ''' <summary>
-        ''' Bounding Rectangle
-        ''' </summary>
-        ''' 
-        ''' <returns></returns>
-        Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
-            Dim r(3) As Double
-            r(0) = Me.midPoint.x - Me.radii.width
-            r(1) = Me.midPoint.y - Me.radii.height
-            r(2) = Me.midPoint.x + Me.radii.width
-            r(3) = Me.midPoint.y + Me.radii.height
-            Return r
-        End Function
-        ''' <summary>
-        ''' Z-Index
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property zIndex As Long Implements Drawable.zIndex
-            Get
-                Return p_zIndex
-            End Get
-            Set(value As Long)
-                p_zIndex = value
-            End Set
-        End Property
-
     End Class
 #End Region
 #Region "Pen Class"
@@ -3706,19 +3913,19 @@ Namespace WMDraw
 
         'Public stroke As System.Windows.Media.Brush
 
+        Public Const DASHARRAY_DASHDOT = "5,1,1,1"
+        Public Const DASHARRAY_DASHED_LONG = "6,3"
+        Public Const DASHARRAY_DASHED_MEDIUM = "5,3"
+        Public Const DASHARRAY_DASHED_SHORT = "3,2"
+        Public Const DASHARRAY_POINTS = "1,1"
+        Public Const DASHARRAY_SOLID = ""
         Private p_color As New System.Windows.Media.Color
-        'Private p_thicknessReference As Reference
-        Private p_thickness As size
         Private p_dasharray As System.Windows.Media.DoubleCollection
+
         Private p_opacity As Double
 
-        Public Const DASHARRAY_SOLID = ""
-        Public Const DASHARRAY_DASHED_SHORT = "3,2"
-        Public Const DASHARRAY_DASHED_MEDIUM = "5,3"
-        Public Const DASHARRAY_DASHED_LONG = "6,3"
-        Public Const DASHARRAY_POINTS = "1,1"
-        Public Const DASHARRAY_DASHDOT = "5,1,1,1"
-
+        'Private p_thicknessReference As Reference
+        Private p_thickness As size
         ''' <summary>
         ''' New
         ''' </summary>
@@ -3730,20 +3937,6 @@ Namespace WMDraw
             p_opacity = 1
             Me.dashString = DASHARRAY_SOLID
         End Sub
-        ''' <summary>
-        ''' Stroke as a brush object with defined color
-        ''' </summary>
-        ''' <returns>
-        ''' Brush
-        ''' </returns>
-        Public ReadOnly Property stroke As System.Windows.Media.Brush
-            Get
-                stroke = New System.Windows.Media.SolidColorBrush(Me.color)
-                stroke.Opacity = p_opacity
-
-                Return stroke
-            End Get
-        End Property
         ''' <summary>
         ''' color
         ''' </summary>
@@ -3758,51 +3951,7 @@ Namespace WMDraw
                 p_color = value
             End Set
         End Property
-        ''' <summary>
-        ''' Opacity factor
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property opacity As Double
-            Get
-                Return p_opacity
-            End Get
-            Set(value As Double)
-                p_opacity = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Brush thickness in reference units as set in thicknessReference
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property thickness As Double
-            Get
-                Return p_thickness.width
-            End Get
-            Set(value As Double)
-                p_thickness.width = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Thickness reference
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property thicknessReference As Reference
-            Get
-                Return p_thickness.Reference
-            End Get
-            Set(value As Reference)
-                p_thickness.Reference = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Size equals thickness
-        ''' </summary>
-        ''' <returns></returns>
-        Public ReadOnly Property size As size
-            Get
-                Return p_thickness
-            End Get
-        End Property
+
         ''' <summary>
         ''' Dash array as collection of double values
         ''' </summary>
@@ -3833,27 +3982,85 @@ Namespace WMDraw
 
             End Set
         End Property
+
+        ''' <summary>
+        ''' Opacity factor
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property opacity As Double
+            Get
+                Return p_opacity
+            End Get
+            Set(value As Double)
+                p_opacity = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Size equals thickness
+        ''' </summary>
+        ''' <returns></returns>
+        Public ReadOnly Property size As size
+            Get
+                Return p_thickness
+            End Get
+        End Property
+
+        ''' <summary>
+        ''' Stroke as a brush object with defined color
+        ''' </summary>
+        ''' <returns>
+        ''' Brush
+        ''' </returns>
+        Public ReadOnly Property stroke As System.Windows.Media.Brush
+            Get
+                stroke = New System.Windows.Media.SolidColorBrush(Me.color)
+                stroke.Opacity = p_opacity
+
+                Return stroke
+            End Get
+        End Property
+        ''' <summary>
+        ''' Brush thickness in reference units as set in thicknessReference
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property thickness As Double
+            Get
+                Return p_thickness.width
+            End Get
+            Set(value As Double)
+                p_thickness.width = value
+            End Set
+        End Property
+        ''' <summary>
+        ''' Thickness reference
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property thicknessReference As Reference
+            Get
+                Return p_thickness.Reference
+            End Get
+            Set(value As Reference)
+                p_thickness.Reference = value
+            End Set
+        End Property
     End Class
 #End Region
 #Region "Fill Class"
     <ComVisible(False)>
     Public Class fill
-        ''' <summary>
-        ''' Fill type
-        ''' </summary>
-        Public Enum fillType
-            solidColor
-            linearHatching
-        End Enum
+        Private p_angle As Double
+
+        Private p_color As System.Windows.Media.Color
 
         Private p_filltype As fillType
 
-        Private p_color As System.Windows.Media.Color
-        Private p_thickness As Double
+        Private p_opacity As Double
+
         Private p_spacing As Double
 
-        Private p_angle As Double
-        Private p_opacity As Double
+        Private p_thickness As Double
+
         ''' <summary>
         ''' New
         ''' </summary>
@@ -3866,48 +4073,14 @@ Namespace WMDraw
 
             p_angle = 45
         End Sub
-        ''' <summary>
-        ''' Set solid fill
-        ''' </summary>
-        ''' <param name="color"></param>
-        Public Sub SetSolidColor(color As Color)
-            p_filltype = fillType.solidColor
-            p_color = color
-        End Sub
-        ''' <summary>
-        ''' set filltype Linear Hatch
-        ''' </summary>
-        ''' <param name="color"></param>
-        ''' <param name="opacity"></param>
-        ''' <param name="hatchThickness_mm"></param>
-        ''' <param name="hatchSpacing_mm"></param>
-        ''' <param name="hatchAngle"></param>
-        Public Sub setLinearHatch(color As Color, Optional opacity As Double = 1,
-                                  Optional hatchThickness_mm As Double = 2,
-                                  Optional hatchSpacing_mm As Double = 6,
-                                  Optional hatchAngle As Double = 45)
-            p_filltype = fillType.linearHatching
-            p_color = color
 
-            p_thickness = hatchThickness_mm
-            p_spacing = hatchSpacing_mm
-
-            p_opacity = opacity
-            p_angle = hatchAngle
-
-        End Sub
         ''' <summary>
-        ''' Color
+        ''' Fill type
         ''' </summary>
-        ''' <returns></returns>
-        Public Property color() As Color
-            Get
-                Return p_color
-            End Get
-            Set(value As Color)
-                p_color = value
-            End Set
-        End Property
+        Public Enum fillType
+            solidColor
+            linearHatching
+        End Enum
         ''' <summary>
         ''' Fill Brush depending on fillType
         ''' </summary>
@@ -3989,6 +4162,51 @@ Namespace WMDraw
                 End Select
             End Get
         End Property
+
+        ''' <summary>
+        ''' Color
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property color() As Color
+            Get
+                Return p_color
+            End Get
+            Set(value As Color)
+                p_color = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' set filltype Linear Hatch
+        ''' </summary>
+        ''' <param name="color"></param>
+        ''' <param name="opacity"></param>
+        ''' <param name="hatchThickness_mm"></param>
+        ''' <param name="hatchSpacing_mm"></param>
+        ''' <param name="hatchAngle"></param>
+        Public Sub setLinearHatch(color As Color, Optional opacity As Double = 1,
+                                  Optional hatchThickness_mm As Double = 2,
+                                  Optional hatchSpacing_mm As Double = 6,
+                                  Optional hatchAngle As Double = 45)
+            p_filltype = fillType.linearHatching
+            p_color = color
+
+            p_thickness = hatchThickness_mm
+            p_spacing = hatchSpacing_mm
+
+            p_opacity = opacity
+            p_angle = hatchAngle
+
+        End Sub
+
+        ''' <summary>
+        ''' Set solid fill
+        ''' </summary>
+        ''' <param name="color"></param>
+        Public Sub SetSolidColor(color As Color)
+            p_filltype = fillType.solidColor
+            p_color = color
+        End Sub
     End Class
 #End Region
 #Region "DimensionLine Class"
@@ -3999,47 +4217,44 @@ Namespace WMDraw
     Public Class DimensionLine
         Implements Drawable
 
-        Public Enum DimSymbols
-            Dash
-            Arrow
-        End Enum
-
-        Public Enum DimAlignement
-            aligned
-            horizontal
-            vertical
-        End Enum
-
-        Private p_pen As pen
-        Private p_zIndex As Long
         ''' <summary>
-        ''' Start Point
+        ''' Alignment
         ''' </summary>
-        Private p_startPoint As Point
+        Private p_Alignment As DimAlignement
+
+        Private p_anchorPointDistance As size
+
+        Private p_dimSymbol As DimSymbols
+
         ''' <summary>
         ''' End Point
         ''' </summary>
         Private p_endPoint As Point
 
         ''' <summary>
-        ''' Alignment
-        ''' </summary>
-        Private p_Alignment As DimAlignement
-
-        ''' <summary>
         ''' offset
         ''' </summary>
         ''' 
         Private p_offset As size
-        Private p_symbolSize As size
-        Private p_dimSymbol As DimSymbols
 
-        Private p_anchorPointDistance As size
         Private p_overlength As size
 
-        Private p_textSize As size
+        Private p_pen As pen
+
+        ''' <summary>
+        ''' Start Point
+        ''' </summary>
+        Private p_startPoint As Point
+
+        Private p_symbolSize As size
+
         Private p_textFormatString As String
+
         Private p_textOverwrite As String
+
+        Private p_textSize As size
+
+        Private p_zIndex As Long
 
         Sub New()
             Me.pen = New pen()
@@ -4082,6 +4297,7 @@ Namespace WMDraw
             Me.startPoint = New Point
             Me.endPoint = New Point
         End Sub
+
         ''' <summary>
         ''' DimensionLine from start and end points in world coordinates
         ''' </summary>
@@ -4092,6 +4308,7 @@ Namespace WMDraw
             Me.startPoint = startPoint
             Me.endPoint = endPoint
         End Sub
+
         ''' <summary>
         ''' DimensionLine from start and end coordinates in world coordinates
         ''' </summary>
@@ -4104,6 +4321,7 @@ Namespace WMDraw
             Me.startPoint = New Point(startX, startY)
             Me.endPoint = New Point(endX, endY)
         End Sub
+
         ''' <summary>
         ''' Line from start and end coordinates in coordinates in defined reference 
         ''' </summary>
@@ -4117,6 +4335,275 @@ Namespace WMDraw
             Me.startPoint = New Point(startX, startY, coordinateReference)
             Me.endPoint = New Point(endX, endY, coordinateReference)
         End Sub
+
+        Public Enum DimAlignement
+            aligned
+            horizontal
+            vertical
+        End Enum
+
+        Public Enum DimSymbols
+            Dash
+            Arrow
+        End Enum
+        ''' <summary>
+        ''' Alignment of dimension line
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property alignment As DimAlignement
+            Get
+                Return p_Alignment
+            End Get
+            Set(value As DimAlignement)
+                p_Alignment = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Anchor Point Distance 
+        '''
+        '''            |
+        '''            |
+        ''' ·  --------+--
+        '''            |
+        '''   ^ this distance
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property anchorPointDistance As size
+            Get
+                Return p_anchorPointDistance
+            End Get
+            Set(value As size)
+                p_anchorPointDistance = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Dimension Line Symbol
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property dimSymbol As DimSymbols
+            Get
+                Return p_dimSymbol
+            End Get
+            Set(value As DimSymbols)
+                p_dimSymbol = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' End Point
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property endPoint As Point
+            Get
+                Return p_endPoint
+            End Get
+            Set(value As Point)
+                p_endPoint = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Offset value
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property offset As size
+            Get
+                Return p_offset
+            End Get
+            Set(value As size)
+                p_offset = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Dimension Lines overlength
+        ''' 
+        '''            |
+        '''            |
+        ''' ·  --------+--
+        '''            | ^ this overlengths
+        '''            
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property overlength As size
+            Get
+                Return p_overlength
+            End Get
+            Set(value As size)
+                p_overlength = value
+            End Set
+        End Property
+
+        Public Property pen As pen Implements Drawable.pen
+            Get
+                Return p_pen
+            End Get
+            Set(value As pen)
+                p_pen = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Start Point
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property startPoint As Point
+            Get
+                Return p_startPoint
+            End Get
+            Set(value As Point)
+                p_startPoint = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Symbol size
+        ''' ·  --------+
+        '''            ^ this size
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property symbolSize As size
+            Get
+                Return p_symbolSize
+            End Get
+            Set(value As size)
+                p_symbolSize = value
+            End Set
+        End Property
+
+        Public Property textFormatString() As String
+            Get
+                Return p_textFormatString
+            End Get
+            Set(value As String)
+                p_textFormatString = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' set a Text to overwrite measured value (default is nothing)
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property textOverwrite() As String
+            Get
+                Return p_textOverwrite
+            End Get
+            Set(value As String)
+                p_textOverwrite = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Text Size (default is 6.5 mm)
+        ''' </summary>
+        ''' <returns></returns>
+        Public Property textSize As size
+            Get
+                Return p_textSize
+            End Get
+            Set(value As size)
+                p_textSize = value
+            End Set
+        End Property
+
+        Public Property zIndex As Long Implements Drawable.zIndex
+            Get
+                Return p_zIndex
+            End Get
+            Set(value As Long)
+                p_zIndex = value
+            End Set
+        End Property
+
+        ''' <summary>
+        ''' Calculate bounding Rectangle
+        ''' </summary>
+        ''' <param name="contextCoordinatesDelegate"></param>
+        ''' <param name="contextSizeDelegate"></param>
+        ''' <returns></returns>
+        Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
+
+            Dim r(3) As Double
+
+            r(0) = startPoint.x
+            r(1) = startPoint.y
+
+            r(2) = endPoint.x
+            r(3) = endPoint.y
+
+            ' sort points
+            For i As Integer = 0 To 1
+                If r(0 + i) > r(2 + i) Then
+                    Dim t As Double = r(0 + i)
+                    r(0 + i) = r(2 + i)
+                    r(2 + i) = t
+                End If
+            Next
+
+            ' todo: include offset value to calcultate bounding rectangle
+
+            'getWordSize
+            Dim offsetW As New size
+            Dim overlengthW As New size
+
+            offsetW = getWordSize(offset)
+            overlengthW = getWordSize(overlength)
+
+            Dim gl1 As New Geom.line
+            Dim gl2 As New Geom.line
+
+            Select Case alignment
+                Case DimAlignement.aligned
+                    gl1 = New Geom.line(startPoint.x, startPoint.y, endPoint.x - startPoint.x, endPoint.y - startPoint.y)
+                Case DimAlignement.horizontal
+                    gl1 = New Geom.line(startPoint.x, startPoint.y, endPoint.x - startPoint.x, 0)
+                Case DimAlignement.vertical
+                    If startPoint.x >= endPoint.x Then
+                        gl1 = New Geom.line(startPoint.x, startPoint.y, 0, endPoint.y - startPoint.y)
+                    Else
+                        gl1 = New Geom.line(startPoint.x, startPoint.y, 0, endPoint.y - startPoint.y)
+                    End If
+            End Select
+
+            ' normal vector
+            Dim uVect As Geom.Vector
+            Dim nVect As Geom.Vector
+            uVect = gl1.d.unitVector
+            nVect = uVect.normal
+
+            gl2 = gl1
+            gl2 = gl1.offsetLine(-offsetW.width)
+
+            Dim p As New Point
+            p.x = gl2.px - uVect.x * overlengthW.width
+            p.y = gl2.py - uVect.y * overlengthW.width
+            myMath.includeInBoundingRectangle(r, p)
+
+            p.x = gl2.px + gl2.dx + uVect.x * overlengthW.width
+            p.y = gl2.py + gl2.dy + uVect.y * overlengthW.width
+            myMath.includeInBoundingRectangle(r, p)
+
+            Return r
+        End Function
+
+        ''' <summary>
+        ''' CompareTo as implementation of IComparable
+        ''' </summary>
+        ''' <param name="other"></param>
+        ''' <returns></returns>
+        Public Function CompareTo(ByVal other As Drawable) As Integer Implements System.IComparable(Of Drawable).CompareTo
+            If p_zIndex = other.zIndex Then
+                Return 0
+            Else
+                If p_zIndex < other.zIndex Then
+                    Return -1
+                Else
+                    Return 1
+                End If
+            End If
+        End Function
 
         ''' <summary>
         ''' place on canvas
@@ -4382,263 +4869,6 @@ Namespace WMDraw
             End If
 
         End Sub
-        ''' <summary>
-        ''' Calculate bounding Rectangle
-        ''' </summary>
-        ''' <param name="contextCoordinatesDelegate"></param>
-        ''' <param name="contextSizeDelegate"></param>
-        ''' <returns></returns>
-        Public Function boundingRectangle(Optional getWordSize As Drawable.estimateWorldSize = Nothing) As Double() Implements Drawable.boundingRectangle
-
-            Dim r(3) As Double
-
-            r(0) = startPoint.x
-            r(1) = startPoint.y
-
-            r(2) = endPoint.x
-            r(3) = endPoint.y
-
-            ' sort points
-            For i As Integer = 0 To 1
-                If r(0 + i) > r(2 + i) Then
-                    Dim t As Double = r(0 + i)
-                    r(0 + i) = r(2 + i)
-                    r(2 + i) = t
-                End If
-            Next
-
-            ' todo: include offset value to calcultate bounding rectangle
-#If dp Then
-            Debug.Print(String.Format("Rectangle from Coordinates: {0}/{1} - {2}/{3}", r(0), r(1), r(2), r(3)))
-#End If
-            'getWordSize
-            Dim offsetW As New size
-            Dim overlengthW As New size
-
-            offsetW = getWordSize(offset)
-            overlengthW = getWordSize(overlength)
-
-            Dim gl1 As New Geom.line
-            Dim gl2 As New Geom.line
-
-            Select Case alignment
-                Case DimAlignement.aligned
-                    gl1 = New Geom.line(startPoint.x, startPoint.y, endPoint.x - startPoint.x, endPoint.y - startPoint.y)
-                Case DimAlignement.horizontal
-                    gl1 = New Geom.line(startPoint.x, startPoint.y, endPoint.x - startPoint.x, 0)
-                Case DimAlignement.vertical
-                    If startPoint.x >= endPoint.x Then
-                        gl1 = New Geom.line(startPoint.x, startPoint.y, 0, endPoint.y - startPoint.y)
-                    Else
-                        gl1 = New Geom.line(startPoint.x, startPoint.y, 0, endPoint.y - startPoint.y)
-                    End If
-            End Select
-
-            ' normal vector
-            Dim uVect As Geom.Vector
-            Dim nVect As Geom.Vector
-            uVect = gl1.d.unitVector
-            nVect = uVect.normal
-
-            gl2 = gl1
-            gl2 = gl1.offsetLine(-offsetW.width)
-
-            Dim p As New Point
-            p.x = gl2.px - uVect.x * overlengthW.width
-            p.y = gl2.py - uVect.y * overlengthW.width
-            myMath.includeInBoundingRectangle(r, p)
-
-            p.x = gl2.px + gl2.dx + uVect.x * overlengthW.width
-            p.y = gl2.py + gl2.dy + uVect.y * overlengthW.width
-            myMath.includeInBoundingRectangle(r, p)
-
-#If dp Then
-            Debug.Print(String.Format("Rectangle including offsets: {0}/{1} - {2}/{3}", r(0), r(1), r(2), r(3)))
-#End If
-
-            Return r
-        End Function
-        ''' <summary>
-        ''' Alignment of dimension line
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property alignment As DimAlignement
-            Get
-                Return p_Alignment
-            End Get
-            Set(value As DimAlignement)
-                p_Alignment = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Offset value
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property offset As size
-            Get
-                Return p_offset
-            End Get
-            Set(value As size)
-                p_offset = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Dimension Line Symbol
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property dimSymbol As DimSymbols
-            Get
-                Return p_dimSymbol
-            End Get
-            Set(value As DimSymbols)
-                p_dimSymbol = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Symbol size
-        ''' ·  --------+
-        '''            ^ this size
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property symbolSize As size
-            Get
-                Return p_symbolSize
-            End Get
-            Set(value As size)
-                p_symbolSize = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Anchor Point Distance 
-        '''
-        '''            |
-        '''            |
-        ''' ·  --------+--
-        '''            |
-        '''   ^ this distance
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property anchorPointDistance As size
-            Get
-                Return p_anchorPointDistance
-            End Get
-            Set(value As size)
-                p_anchorPointDistance = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Dimension Lines overlength
-        ''' 
-        '''            |
-        '''            |
-        ''' ·  --------+--
-        '''            | ^ this overlengths
-        '''            
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property overlength As size
-            Get
-                Return p_overlength
-            End Get
-            Set(value As size)
-                p_overlength = value
-            End Set
-        End Property
-
-        ''' <summary>
-        ''' Text Size (default is 6.5 mm)
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property textSize As size
-            Get
-                Return p_textSize
-            End Get
-            Set(value As size)
-                p_textSize = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' Start Point
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property startPoint As Point
-            Get
-                Return p_startPoint
-            End Get
-            Set(value As Point)
-                p_startPoint = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' set a Text to overwrite measured value (default is nothing)
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property textOverwrite() As String
-            Get
-                Return p_textOverwrite
-            End Get
-            Set(value As String)
-                p_textOverwrite = value
-            End Set
-        End Property
-
-        Public Property textFormatString() As String
-            Get
-                Return p_textFormatString
-            End Get
-            Set(value As String)
-                p_textFormatString = value
-            End Set
-        End Property
-        ''' <summary>
-        ''' End Point
-        ''' </summary>
-        ''' <returns></returns>
-        Public Property endPoint As Point
-            Get
-                Return p_endPoint
-            End Get
-            Set(value As Point)
-                p_endPoint = value
-            End Set
-        End Property
-
-        Public Property pen As pen Implements Drawable.pen
-            Get
-                Return p_pen
-            End Get
-            Set(value As pen)
-                p_pen = value
-            End Set
-        End Property
-
-        Public Property zIndex As Long Implements Drawable.zIndex
-            Get
-                Return p_zIndex
-            End Get
-            Set(value As Long)
-                p_zIndex = value
-            End Set
-        End Property
-
-
-        ''' <summary>
-        ''' CompareTo as implementation of IComparable
-        ''' </summary>
-        ''' <param name="other"></param>
-        ''' <returns></returns>
-        Public Function CompareTo(ByVal other As Drawable) As Integer Implements System.IComparable(Of Drawable).CompareTo
-            If p_zIndex = other.zIndex Then
-                Return 0
-            Else
-                If p_zIndex < other.zIndex Then
-                    Return -1
-                Else
-                    Return 1
-                End If
-            End If
-        End Function
-
     End Class
 #End Region
 
