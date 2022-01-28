@@ -1,6 +1,6 @@
-﻿Imports WMDraw17.WallnerMild.Draw
-Imports WMDraw17.WallnerMild
-Imports WMDraw17COM.WMDraw
+﻿Imports WallnerMild
+Imports WallnerMild.WMDraw
+Imports WallnerMild.c_WMComDraw
 
 Class MainWindow
     Private Sub button_Click(sender As Object, e As RoutedEventArgs) Handles button.Click
@@ -27,24 +27,92 @@ Class MainWindow
         'wmd.add(New Line(1.5, 4.5, 0, 3))
 
         ' World Coordinates
-        wmd.add(New Line(0, 0, 3, 1))
-        wmd.add(New Line(3, 1, 4.5, 1.5))
-        wmd.add(New Line(4.5, 1.5, 9, 3))
+        '   wmd.add(New Line(-5, -2, 3, 1))
+        '   wmd.add(New Line(3, 1, 4.5, 1.5))
+        '   wmd.add(New Line(4.5, 1.5, 9, 3))
 
-        'support
-        wmd.add(New Support(3, 1, 0, "A"))
-        wmd.add(New Support(4.5, 1.5, 0, "B"))
-        wmd.add(New Support(9, 3, 30, "C"))
+
+        ' moment
+        '
+        'wmd.add(New MomentArc(3, 1, "M = 1 kNm"))
+        'wmd.add(New MomentArc(4.5, 1.5, "M = 2 kNm", 30, 150))
+
+        ' force
+
+        'Dim FR As ForceArrow
+
+        'For i As Integer = 0 To 90 Step 30
+        '    FR = New ForceArrow(1, 1, 20, i, "{0:F2} kN", 20)
+        '    wmd.add(FR)
+        'Next
+
+        'For i As Integer = 0 To 90 Step 30
+        '    FR = New ForceArrow(5, 1.5, 20, i, "{0:F2} kN", 20)
+        '    FR.ForceDirection = ForceArrow.forceDirections.ArrowAtBottom
+        '    wmd.add(FR)
+        'Next
+
 
         'point
         wmd.add(New Point(3, 3, PointDisplay.x, 2, Reference.contextMillimeters))
 
-
         wmd.add(New Line(0, 0.25, 1, 0.25, Reference.contextFraction))
         wmd.add(New Point(0.5, 0.25, Reference.contextFraction, PointDisplay.x, 2, Reference.contextMillimeters))
 
-        wmd.add(New Beam(3.5, 0.5, 8, 2))
-        wmd.add(New BeamUniformLoad(3.5, 0.5, 8, 2, BeamUniformLoad.loadedLengthType.horizontalProjection, BeamUniformLoad.loadOrientationType.localOrientation, 1))
+        Dim myBeam As New Beam(1, 1, 8, 2)
+        wmd.add(myBeam)
+
+        Dim alpha As Double
+        alpha = Math.Atan2(2 - 1, 8 - 1)
+
+        Dim el1 As New Ellipse(New Point((1 + 8) / 2, (1 + 2) / 2), New size(Math.Sqrt((8 - 1) ^ 2 + (2 - 1) ^ 2) / 2, Math.Sqrt((8 - 1) ^ 2 + (2 - 1) ^ 2) / 4))
+        el1.zIndex = 2
+        wmd.add(el1)
+
+        Dim el2 As New Ellipse(New Point((1 + 8) / 2, (1 + 2) / 2), New size(Math.Sqrt((8 - 1) ^ 2 + (2 - 1) ^ 2) / 2, Math.Sqrt((8 - 1) ^ 2 + (2 - 1) ^ 2) / 4))
+        el2.angle = alpha * 180 / Math.PI
+        el2.fill = New fill()
+        el2.fill.setLinearHatch(Color.FromRgb(255, 0, 0))
+        wmd.add(el2)
+
+        Dim rc2 As New Rectangle(New Point(1, 1), New Point(3, 6))
+        wmd.add(rc2)
+
+        Dim fa As New ForceArrow()
+        fa.tipPoint = myBeam.innerPoint(0.3)
+        fa.F = 10
+        fa.angle = -90
+        wmd.add(fa)
+
+
+
+        Dim udl As New BeamUniformLoad(myBeam, New size(5, Reference.contextMillimeters), BeamUniformLoad.loadReferenceLength.horizontalProjection, BeamUniformLoad.loadDirectionType.localKS)
+        udl.pen.color = Colors.Red
+        udl.loadIntensityEnd = New size(7, Reference.contextMillimeters)
+        udl.drawArrows = True
+        'udl.direction = BeamUniformLoad.loadDirectionType.localKS
+        udl.direction = BeamUniformLoad.loadDirectionType.globalKS
+        udl.lengthReference = BeamUniformLoad.loadReferenceLength.horizontalProjection
+        'udl.lengthReference = BeamUniformLoad.loadReferenceLength.realLength
+        wmd.add(udl)
+
+        'support
+        wmd.add(New Support(1, 1, 30, "A"))
+        wmd.add(New Support(8, 2, 0, "B"))
+
+
+        wmd.add(New DimensionLine(1, 1, 8, 2))
+
+        Dim d2 As New DimensionLine(1, 1, 8, 2)
+        d2.alignment = DimensionLine.DimAlignement.vertical
+        wmd.add(d2)
+
+
+
+        Dim d3 As New DimensionLine(1, 1, 8, 2)
+        d3.alignment = DimensionLine.DimAlignement.horizontal
+        wmd.add(d3)
+
         Dim p2 As New pen
         p2.color = System.Windows.Media.Colors.Green
         p2.dashString = pen.DASHARRAY_DASHDOT
@@ -64,9 +132,13 @@ Class MainWindow
         '
         wmd.Context = Contexts.WPFCanvas
 
+        wmd.ContextObject.Margin = New Margin(100)
+        wmd.ContextObject.Margin.Reference = Reference.contextUnits
+
         wmd.ContextObject.fitHeight = True
         wmd.ContextObject.fitWidth = True
         wmd.ContextObject.fitProportional = True
+
 
         '
         ' return useable height
@@ -107,7 +179,7 @@ Class MainWindow
     End Sub
 
     Private Sub button2_Click(sender As Object, e As RoutedEventArgs) Handles button2.Click
-        Dim wmcom As New WMDraw17COM.WMDraw
+        Dim wmcom As New c_WMComDraw
         wmcom.test1()
         MsgBox("PNG Copied to Clipboard")
     End Sub
@@ -120,11 +192,12 @@ Class MainWindow
         '
 
         ' World Coordinates
-        wmd.add(New Line(0, 0, 3, 1))
-        wmd.add(New Line(3, 1, 4.5, 1.5))
-        wmd.add(New Line(4.5, 1.5, 9, 3))
-
+        wmd.add(New Line(0, 0, 3, 1, Reference.world))
+        wmd.add(New Line(3, 1, 4.5, 1.5, Reference.world))
+        wmd.add(New Line(4.5, 1.5, 9, 3, Reference.world))
         wmd.setContext(Contexts.PNGFile, 50, 50, "mm")
+        wmd.ContextObject.fitProportional = True
+        wmd.ContextObject.Margin = New Margin(10, 10, 10, 10)
         MsgBox(wmd.draw())
     End Sub
 
@@ -135,6 +208,9 @@ Class MainWindow
         For i As Long = 0 To 9 Step 2
             wmd.add(New Line(i / 10, 0, (i + 1) / 10, 0, References.contextFraction))
             wmd.add(New Line(0, i / 10, 0, (i + 1) / 10, References.contextFraction))
+
+            wmd.add(New Line(i / 10, 1, (i + 1) / 10, 1, References.contextFraction))
+            wmd.add(New Line(1, i / 10, 1, (i + 1) / 10, References.contextFraction))
         Next
 
         'wmd.add(New Line(0, 0, 0, 1, References.contextFraction))
@@ -143,10 +219,44 @@ Class MainWindow
         wmd.add(New Line(0, 0, 1, 1, References.contextFraction))
         wmd.add(New Line(0, 1, 1, 0, References.contextFraction))
 
+
         wmd.add(New Line(0, 0.5, 1, 0.5, References.contextFraction))
         wmd.add(New Line(0.5, 0, 0.5, 1, References.contextFraction))
 
         wmd.setContext(Contexts.PNGFile, 50, 50, "mm", "d:\temp\file1.png")
+
+        wmd.ContextObject.Margin = New Margin(3)
+        wmd.ContextObject.Margin.Reference = Reference.contextMillimeters
+
         MsgBox(wmd.draw())
+    End Sub
+
+    Private Sub button4_Click(sender As Object, e As RoutedEventArgs) Handles button4.Click
+        Dim wmd As New Drawing
+        '
+        ' set contextObject
+        '
+        wmd.ContextObject.Item = Me.canvas1
+
+        '
+        ' set contexttype (should be done automatically)
+        '
+        wmd.Context = Contexts.WPFCanvas
+
+        wmd.ContextObject.Margin = New Margin(50)
+        wmd.ContextObject.Margin.Reference = Reference.contextUnits
+
+        wmd.ContextObject.fitHeight = True
+        wmd.ContextObject.fitWidth = True
+        wmd.ContextObject.fitProportional = True
+
+
+        '
+        ' return useable height
+        '
+        Debug.Print(wmd.ContextObject.heightMM)
+        Debug.Print(wmd.ContextObject.widthMM)
+
+        wmd.draw()
     End Sub
 End Class

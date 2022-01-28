@@ -1,11 +1,4 @@
-﻿'		_                 _           
-'	 __| |_ _ __ ___ __ _(_)_ _  __ _ 
-'	/ _` | '_/ _` \ V  V / | ' \/ _` |
-'	\__,_|_| \__,_|\_/\_/|_|_||_\__, |
-'								|___/ 
-' Library for drawing to different destination formats
-'
-Imports System.IO
+﻿Imports System.IO
 Imports System.Runtime.Serialization
 Imports System.Windows.Media.Imaging
 
@@ -70,15 +63,11 @@ Namespace WMDraw
 
         Private p_drawables As New List(Of Drawable)        ' list of drawables 
         Private p_context As Contexts                       ' context type
-
         Private p_filename As String                        ' filename
-        Private WithEvents p_contextObject As New ContextObject        ' context object
+        Private p_contextObject As New ContextObject        ' context object
         Private p_boundingRectangle As Double()             ' (0) min x; (1) min y; (2) max x; (3) max y
         Private p_boundingRectangle_outdated As Boolean     ' true if boundin rectangle is outdated
         Private p_pen As pen                                ' current drawing pen
-
-        Private p_marginChanged As Boolean                  ' context margin changed for correct buffering of MarginContext
-        Private p_mTrans As New Margin                      ' margin in context units
 
         Const DEFAULT_OUTPUT_DPI = 300 '96  ' dpi           ' default output resolution
         Const MM_PER_INCH = 25.4                            ' unit conversion
@@ -132,8 +121,8 @@ Namespace WMDraw
         ''' <param name="values">
         '''              | PNGClipboard |
         '''              +--------------+
-        ''' fist value   | width (px or unit from third value)   | 
-        ''' second value | height (px or unit from third value)  |
+        ''' fist value   | width (px)   | 
+        ''' second value | height (px)  |
         ''' third value  | {mm,cm,px}
         '''              | (px is default)
         ''' 4th value    | FileName
@@ -255,7 +244,7 @@ Namespace WMDraw
             End Set
         End Property
         ''' <summary>
-        ''' Calculate the overall bounding rectangle (in world coordinates)
+        ''' Calculate the overall bounding rectangle
         ''' </summary>
         ''' <remarks>
         ''' data is stored in p_boundingRectangle
@@ -271,7 +260,7 @@ Namespace WMDraw
             Dim isFirst As Boolean = True
 
             For Each myItem In p_drawables
-                tr = myItem.boundingRectangle(AddressOf estimateWorldSize)
+                tr = myItem.boundingRectangle()
 
                 If isFirst Then
                     p_boundingRectangle(0) = tr(0)
@@ -296,7 +285,6 @@ Namespace WMDraw
             p_boundingRectangle_outdated = False
 
         End Sub
-
         ''' <summary>
         ''' 
         ''' </summary>
@@ -475,7 +463,31 @@ Namespace WMDraw
                     Dim scaleX As Double = 1
                     Dim scaleY As Double = 1
 
-                    getScaling_Based_on_BoundingBox(scaleX, scaleY)
+                    If Me.ContextObject.fitWidth Then
+                        Dim worldWidth = p_boundingRectangle(2) - p_boundingRectangle(0)
+                        If worldWidth = 0 Then
+                            scaleX = 1
+                        Else
+                            scaleX = Me.ContextObject.width / worldWidth
+                        End If
+                    End If
+
+                    If Me.ContextObject.fitHeight Then
+                        Dim worldHeight = p_boundingRectangle(3) - p_boundingRectangle(1)
+                        If worldHeight = 0 Then
+                            scaleY = 1
+                        Else
+                            scaleY = Me.ContextObject.height / worldHeight
+                        End If
+                    End If
+
+                    If Me.ContextObject.fitProportional Then
+                        If scaleX > scaleY Then
+                            scaleX = scaleY
+                        Else
+                            scaleY = scaleX
+                        End If
+                    End If
 
                     sTrans.width = s.width * scaleX '* 96 / DEFAULT_OUTPUT_DPI
                     sTrans.height = s.height * scaleY '* 96 / DEFAULT_OUTPUT_DPI
@@ -490,141 +502,76 @@ Namespace WMDraw
         ''' </summary>
         Private ReadOnly Property contextMargin() As Margin
             Get
-                If p_marginChanged Then
-                    Dim m As New Margin
-                    m = Me.ContextObject.Margin
-                    p_mTrans = New Margin
+                Dim m As New Margin
+                m = Me.ContextObject.Margin
+                Dim mTrans As New Margin
 
-                    Select Case m.Reference
-                        Case Reference.contextUnits
-                            p_mTrans.left = m.left * 96 / DEFAULT_OUTPUT_DPI
-                            p_mTrans.top = m.top * 96 / DEFAULT_OUTPUT_DPI
-                            p_mTrans.right = m.right * 96 / DEFAULT_OUTPUT_DPI
-                            p_mTrans.bottom = m.bottom * 96 / DEFAULT_OUTPUT_DPI
-                        Case Reference.contextFraction
-                            p_mTrans.left = m.left * Me.ContextObject.width
-                            p_mTrans.top = m.top * Me.ContextObject.height
-                            p_mTrans.right = m.right * Me.ContextObject.width
-                            p_mTrans.bottom = m.bottom * Me.ContextObject.height
-                        Case Reference.contextMillimeters
-                            p_mTrans.left = m.left * Me.ContextObject.width / Me.ContextObject.widthMM
-                            p_mTrans.top = m.top * Me.ContextObject.height / Me.ContextObject.heightMM
-                            p_mTrans.right = m.right * Me.ContextObject.width / Me.ContextObject.widthMM
-                            p_mTrans.bottom = m.bottom * Me.ContextObject.height / Me.ContextObject.heightMM
-                        Case Reference.world
+                Select Case m.Reference
+                    Case Reference.contextUnits
+                        mTrans.left = m.left * 96 / DEFAULT_OUTPUT_DPI
+                        mTrans.top = m.top * 96 / DEFAULT_OUTPUT_DPI
+                        mTrans.right = m.right * 96 / DEFAULT_OUTPUT_DPI
+                        mTrans.bottom = m.bottom * 96 / DEFAULT_OUTPUT_DPI
+                    Case Reference.contextFraction
+                        mTrans.left = m.left * Me.ContextObject.width
+                        mTrans.top = m.top * Me.ContextObject.height
+                        mTrans.right = m.right * Me.ContextObject.width
+                        mTrans.bottom = m.bottom * Me.ContextObject.height
+                    Case Reference.contextMillimeters
+                        mTrans.left = m.left * Me.ContextObject.width / Me.ContextObject.widthMM
+                        mTrans.top = m.top * Me.ContextObject.height / Me.ContextObject.heightMM
+                        mTrans.right = m.right * Me.ContextObject.width / Me.ContextObject.widthMM
+                        mTrans.bottom = m.bottom * Me.ContextObject.height / Me.ContextObject.heightMM
+                    Case Reference.world
 
-                            Dim scaleX As Double = 1
-                            Dim scaleY As Double = 1
+                        Dim scaleX As Double = 1
+                        Dim scaleY As Double = 1
 
-                            If Me.ContextObject.fitWidth Then
-                                Dim worldWidth = p_boundingRectangle(2) - p_boundingRectangle(0)
-                                If worldWidth = 0 Then
-                                    scaleX = 1
-                                Else
-                                    scaleX = Me.ContextObject.width / worldWidth
-                                End If
+                        If Me.ContextObject.fitWidth Then
+                            Dim worldWidth = p_boundingRectangle(2) - p_boundingRectangle(0)
+                            If worldWidth = 0 Then
+                                scaleX = 1
+                            Else
+                                scaleX = Me.ContextObject.width / worldWidth
                             End If
+                        End If
 
-                            If Me.ContextObject.fitHeight Then
-                                Dim worldHeight = p_boundingRectangle(3) - p_boundingRectangle(1)
-                                If worldHeight = 0 Then
-                                    scaleY = 1
-                                Else
-                                    scaleY = Me.ContextObject.height / worldHeight
-                                End If
+                        If Me.ContextObject.fitHeight Then
+                            Dim worldHeight = p_boundingRectangle(3) - p_boundingRectangle(1)
+                            If worldHeight = 0 Then
+                                scaleY = 1
+                            Else
+                                scaleY = Me.ContextObject.height / worldHeight
                             End If
+                        End If
 
-                            If Me.ContextObject.fitProportional Then
-                                If scaleX > scaleY Then
-                                    scaleX = scaleY
-                                Else
-                                    scaleY = scaleX
-                                End If
+                        If Me.ContextObject.fitProportional Then
+                            If scaleX > scaleY Then
+                                scaleX = scaleY
+                            Else
+                                scaleY = scaleX
                             End If
+                        End If
 
-                            p_mTrans.left = m.left * scaleX
-                            p_mTrans.top = m.top * scaleY
-                            p_mTrans.right = m.right * scaleX
-                            p_mTrans.bottom = m.bottom * scaleY
+                        mTrans.left = m.left * scaleX
+                        mTrans.top = m.top * scaleY
+                        mTrans.right = m.right * scaleX
+                        mTrans.bottom = m.bottom * scaleY
 
-                            '
-                            ' translate world coordinates
-                            '
-                            'pTrans.x = pTrans.x - p_boundingRectangle(0) * scaleX
-                            'pTrans.y = pTrans.y + p_boundingRectangle(1) * scaleY
-                    End Select
+                        '
+                        ' translate world coordinates
+                        '
+                        'pTrans.x = pTrans.x - p_boundingRectangle(0) * scaleX
+                        'pTrans.y = pTrans.y + p_boundingRectangle(1) * scaleY
 
-                    p_mTrans.Reference = Reference.contextUnits
+                End Select
 
-                    p_marginChanged = False
-                End If
+                mTrans.Reference = Reference.contextUnits
 
-                Return p_mTrans
+                Return mTrans
 
             End Get
         End Property
-        ''' <summary>
-        ''' Estimate world size based on bounding box
-        ''' </summary>
-        ''' <param name="s"></param>
-        ''' <returns></returns>
-        Public Function estimateWorldSize(ByVal s As size) As size
-
-            '
-            ' Transform point coordinates
-            '
-            Dim sContext As New size
-            Dim sTrans As New size
-
-            sContext = contextSize(s)
-
-            Dim scaleX As Double = 1
-            Dim scaleY As Double = 1
-
-            getScaling_Based_on_BoundingBox(scaleX, scaleY)
-
-            sTrans.width = sContext.width / scaleX
-            sTrans.height = sContext.height / scaleY
-            sTrans.Reference = Reference.world
-
-            Return sTrans
-
-        End Function
-        ''' <summary>
-        ''' Get Scaling factors based on the existing bounding box definition
-        ''' </summary>
-        ''' <param name="scaleX">return Scaling in x</param>
-        ''' <param name="scaleY">return Scaling in y</param>
-        Public Sub getScaling_Based_on_BoundingBox(ByRef scaleX As Double, ByRef scaleY As Double)
-            scaleX = 1
-            scaleY = 1
-
-            If Me.ContextObject.fitWidth Then
-                Dim worldWidth = p_boundingRectangle(2) - p_boundingRectangle(0)
-                If worldWidth = 0 Then
-                    scaleX = 1
-                Else
-                    scaleX = (Me.ContextObject.width - Me.contextMargin.left - Me.contextMargin.right) / worldWidth
-                End If
-            End If
-
-            If Me.ContextObject.fitHeight Then
-                Dim worldHeight = p_boundingRectangle(3) - p_boundingRectangle(1)
-                If worldHeight = 0 Then
-                    scaleY = 1
-                Else
-                    scaleY = (Me.ContextObject.height - Me.contextMargin.bottom - Me.contextMargin.top) / worldHeight
-                End If
-            End If
-
-            If Me.ContextObject.fitProportional Then
-                If scaleX > scaleY Then
-                    scaleX = scaleY
-                Else
-                    scaleY = scaleX
-                End If
-            End If
-        End Sub
 
         ''' <summary>
         ''' Delegated function to calculate context-specific (transformed) coordinates
@@ -640,42 +587,76 @@ Namespace WMDraw
 
             Dim pTrans As New Point
 
+
             Select Case p.coordinateReference
                 Case Reference.contextUnits
-                    ' unchanged but with margin
+                    ' unchanged
                     pTrans.x = Me.contextMargin.left + p.x * 96 / DEFAULT_OUTPUT_DPI
                     pTrans.y = Me.ContextObject.height - Me.contextMargin.bottom - p.y * 96 / DEFAULT_OUTPUT_DPI
 
+                    '
+                    ' translate in contextUnits
+                    '
+                    'If (p_boundingRectangle(2) - p_boundingRectangle(0)) <> 0 Then
+                    '    pTrans.x = pTrans.x - p_boundingRectangle(0) * Me.ContextObject.width / (p_boundingRectangle(2) - p_boundingRectangle(0))
+                    'Else
+                    '    pTrans.x = pTrans.x - p_boundingRectangle(0)
+                    'End If
+                    'If (p_boundingRectangle(3) - p_boundingRectangle(1)) <> 0 Then
+                    '    pTrans.y = pTrans.y + p_boundingRectangle(1) * Me.ContextObject.height / (p_boundingRectangle(3) - p_boundingRectangle(1))
+                    'Else
+                    '    pTrans.y = pTrans.y + p_boundingRectangle(1)
+                    'End If
                 Case Reference.contextFraction
-                    ' fraction to contextUnits
-                    ' with margins added
-                    pTrans.x = Me.contextMargin.left + p.x * (Me.ContextObject.width - Me.contextMargin.left - Me.contextMargin.right)
+
+                    pTrans.x = Me.contextMargin.left + p.x * Me.ContextObject.width
                     pTrans.y = Me.ContextObject.height - Me.contextMargin.bottom -
                                 (Me.ContextObject.height - Me.contextMargin.bottom - Me.contextMargin.top) * p.y
                 Case Reference.contextMillimeters
-                    ' millimeters to contextUnits
-                    ' with margins added
                     pTrans.x = Me.contextMargin.left +
                                 p.x / Me.ContextObject.widthMM * (Me.ContextObject.width - Me.contextMargin.left - Me.contextMargin.right)
                     pTrans.y = (Me.ContextObject.height - Me.contextMargin.bottom) -
                                 (Me.ContextObject.height - Me.contextMargin.bottom - Me.contextMargin.top) * p.y / Me.ContextObject.heightMM
                 Case Reference.world
-                    ' world to contextUnits
-                    '
-                    Dim scaleX As Double
-                    Dim scaleY As Double
 
-                    getScaling_Based_on_BoundingBox(scaleX, scaleY)
+                    Dim scaleX As Double = 1
+                    Dim scaleY As Double = 1
 
-                    ' add margins
+                    If Me.ContextObject.fitWidth Then
+                        Dim worldWidth = p_boundingRectangle(2) - p_boundingRectangle(0)
+                        If worldWidth = 0 Then
+                            scaleX = 1
+                        Else
+                            scaleX = (Me.ContextObject.width - Me.contextMargin.left - Me.contextMargin.right) / worldWidth
+                        End If
+                    End If
+
+                    If Me.ContextObject.fitHeight Then
+                        Dim worldHeight = p_boundingRectangle(3) - p_boundingRectangle(1)
+                        If worldHeight = 0 Then
+                            scaleY = 1
+                        Else
+                            scaleY = (Me.ContextObject.height - Me.contextMargin.bottom - Me.contextMargin.top) / worldHeight
+                        End If
+                    End If
+
+                    If Me.ContextObject.fitProportional Then
+                        If scaleX > scaleY Then
+                            scaleX = scaleY
+                        Else
+                            scaleY = scaleX
+                        End If
+                    End If
+
                     pTrans.x = Me.contextMargin.left + p.x * scaleX '* 96 / DEFAULT_OUTPUT_DPI
                     pTrans.y = Me.ContextObject.height - Me.contextMargin.bottom - p.y * scaleY '* 96 / DEFAULT_OUTPUT_DPI
 
                     '
-                    ' translate world coordinates
+                    ' translate world coordinates (?)
                     '
                     pTrans.x = pTrans.x - p_boundingRectangle(0) * scaleX
                     pTrans.y = pTrans.y + p_boundingRectangle(1) * scaleY
+
             End Select
 
             pTrans.coordinateReference = Reference.contextUnits
@@ -683,9 +664,6 @@ Namespace WMDraw
             Return pTrans
         End Function
 
-        Private Sub p_contextObject_marginChanged() Handles p_contextObject.marginChanged
-            p_marginChanged = True
-        End Sub
     End Class
     ''' <summary>
     ''' Possible orientations in horizontal direction
@@ -709,8 +687,6 @@ Namespace WMDraw
 
         Private p_Reference As Reference
 
-        Public Event marginChanged()
-
         Public Sub New()
             p_left = 0
             p_top = 0
@@ -718,12 +694,10 @@ Namespace WMDraw
             p_bottom = 0
             p_all = -1
             p_Reference = Reference.contextUnits
-            RaiseEvent marginChanged()
         End Sub
 
         Public Sub New(all As Double)
             Me.all = all
-            RaiseEvent marginChanged()
         End Sub
 
         Public Sub New(left, top, right, bottom)
@@ -731,7 +705,6 @@ Namespace WMDraw
             Me.top = top
             Me.right = right
             Me.bottom = bottom
-            RaiseEvent marginChanged()
         End Sub
 
         Public Overrides Function ToString() As String
@@ -748,7 +721,6 @@ Namespace WMDraw
                 p_top = value
                 p_right = value
                 p_bottom = value
-                RaiseEvent marginChanged()
             End Set
         End Property
 
@@ -759,7 +731,6 @@ Namespace WMDraw
             Set(value As Double)
                 p_all = -1
                 p_left = value
-                RaiseEvent marginChanged()
             End Set
         End Property
 
@@ -770,7 +741,6 @@ Namespace WMDraw
             Set(value As Double)
                 p_all = -1
                 p_top = value
-                RaiseEvent marginChanged()
             End Set
         End Property
 
@@ -781,7 +751,6 @@ Namespace WMDraw
             Set(value As Double)
                 p_all = -1
                 p_right = value
-                RaiseEvent marginChanged()
             End Set
         End Property
 
@@ -792,7 +761,6 @@ Namespace WMDraw
             Set(value As Double)
                 p_all = -1
                 p_bottom = value
-                RaiseEvent marginChanged()
             End Set
         End Property
 
@@ -802,7 +770,6 @@ Namespace WMDraw
             End Get
             Set(value As Reference)
                 p_Reference = value
-                RaiseEvent marginChanged()
             End Set
         End Property
     End Class
@@ -823,18 +790,10 @@ Namespace WMDraw
         Private p_dpiX As Double
         Private p_dpiY As Double
 
-        Private WithEvents p_margin As Margin
-
-        Public Event contextObjectChanged()
-        Public Event marginChanged()
+        Private p_margin As Margin
 
         Public Sub New()
             p_margin = New Margin
-            RaiseEvent contextObjectChanged()
-        End Sub
-
-        Private Sub p_margin_marginChanged() Handles p_margin.marginChanged
-            RaiseEvent marginChanged()
         End Sub
 
         Public ReadOnly Property width As Double
@@ -938,7 +897,6 @@ Namespace WMDraw
             End Get
             Set(value As Margin)
                 p_margin = value
-                RaiseEvent marginChanged()
             End Set
         End Property
     End Class

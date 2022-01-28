@@ -11,8 +11,8 @@ Imports System.Runtime.InteropServices
 <Assembly: AssemblyTitle("WMDraw17COM")> 
 <Assembly: AssemblyDescription("")> 
 <Assembly: AssemblyCompany("")> 
-<Assembly: AssemblyProduct("WMDraw17COM")> 
-<Assembly: AssemblyCopyright("Copyright ©  2017")> 
+<Assembly: AssemblyProduct("WMDraw17COM")>
+<Assembly: AssemblyCopyright("Copyright ©  2017-2020")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(True)>

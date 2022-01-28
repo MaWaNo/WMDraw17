@@ -1,15 +1,16 @@
 ﻿Imports System.Runtime.InteropServices
-Imports WMDraw17.WallnerMild.Draw
+
+Imports WallnerMild.WMDraw
 
 <Guid("A3A1019E-474D-413F-A26F-0180C040C45B"),
         ClassInterface(ClassInterfaceType.AutoDual),
-        ProgId("WMDraw17COM.WMDraw")>
-Public Class WMDraw
+        ProgId("WMComDraw.c_WMComDraw")>
+Public Class c_WMComDraw
     Dim p_wmd As New Drawing
 
     Private p_ref As References
     ''' <summary>
-    ''' Mirror of WMDraw17.WallnerMild.Draw.Reference
+    ''' Mirror of WallnerMild.Draw.Reference
     ''' </summary>
     Public Enum References
         world = 0
@@ -18,7 +19,7 @@ Public Class WMDraw
         contextFraction = 3
     End Enum
     ''' <summary>
-    ''' Mirror of WMDraw17.WallnerMild.Draw.Reference
+    ''' Mirror of WallnerMild.Draw.Reference
     ''' </summary>
     ''' <returns></returns>
     Public Property CurRef As References
@@ -45,7 +46,7 @@ Public Class WMDraw
         p_wmd = New Drawing
     End Sub
     Public Sub addLine(startX As Double, startY As Double, endX As Double, endY As Double)
-        'Dim l As New Line(startX, startY, endX, endY, WMDraw17.WallnerMild.Draw.Reference.world)
+        'Dim l As New Line(startX, startY, endX, endY, WallnerMild.Draw.Reference.world)
         Dim l As New Line(startX, startY, endX, endY, CurRef)
         p_wmd.add(l)
     End Sub
@@ -89,7 +90,7 @@ Public Class WMDraw
         MsgBox("test2")
     End Sub
     Public Sub test3()
-        Dim p As New WMDraw17.WallnerMild.Draw.Drawing
+        Dim p As New Drawing
         MsgBox(TypeName(p))
     End Sub
     Public Sub test1()
@@ -113,5 +114,9 @@ Public Class WMDraw
 
         p_wmd.draw()
 
+    End Sub
+
+    Public Sub test4()
+        MsgBox("Test4", vbOKOnly)
     End Sub
 End Class
