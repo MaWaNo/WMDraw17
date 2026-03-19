@@ -337,4 +337,32 @@ Class MainWindow
         wmd.draw()
     End Sub
 
+    Private Sub buttonDT_Click(sender As Object, e As RoutedEventArgs) Handles buttonDT.Click
+        Dim wmd As New Drawing
+
+        ' Typical softwood timber dovetail joint — all dimensions in mm
+        wmd.add(New DoveTail(
+            r:=20,      ' round radius
+            hz:=30,     ' notch depth
+            bz:=0,      ' (reserved, not used in geometry)
+            lz:=80,     ' dovetail length
+            tz:=5,      ' taper depth
+            gamma:=60,  ' opening angle °
+            beta:=10,   ' taper angle °
+            a:=25,      ' notch rest height
+            bN:=80,     ' secondary beam half-width
+            hN:=160,    ' secondary beam height
+            bH:=120,    ' primary beam width
+            hH:=200))   ' primary beam height
+
+        wmd.ContextObject.Item = Me.canvas1
+        wmd.Context = Contexts.WPFCanvas
+        wmd.ContextObject.Margin = New WMDraw.Margin(10)
+        wmd.ContextObject.Margin.Reference = Reference.contextMillimeters
+        wmd.ContextObject.fitHeight = True
+        wmd.ContextObject.fitWidth = True
+        wmd.ContextObject.fitProportional = True
+        wmd.draw()
+    End Sub
+
 End Class

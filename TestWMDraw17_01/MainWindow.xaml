@@ -21,6 +21,7 @@
             <Button x:Name="button3"   Content="File"         Width="75" Margin="0,2"/>
             <Button x:Name="button4"   Content="Test1"        Width="75" Margin="0,2"/>
             <Button x:Name="buttonCLT" Content="CLT"          Width="75" Margin="0,2"/>
+            <Button x:Name="buttonDT"  Content="DoveTail"     Width="75" Margin="0,2"/>
         </StackPanel>
 
         <Canvas x:Name="canvas1" Grid.Column="1" Margin="5" Background="AliceBlue"/>

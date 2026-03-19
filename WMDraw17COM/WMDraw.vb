@@ -145,6 +145,9 @@ Public Class c_WMComDraw
     ''' <param name=" bH"></param> 
     ''' <param name=" hH"></param> 
     ''' <returns></returns>
+    ''' <summary>
+    ''' Draw a dovetail timber joint. Delegates all logic to the core DoveTail drawable.
+    ''' </summary>
     Public Function drawDoveTail(toClipboard As Boolean, typeIndex As Integer,
                                  r As Single, hz As Single, bz As Single,
                                  lz As Single, tz As Single, gamma As Single,
@@ -152,17 +155,12 @@ Public Class c_WMComDraw
                                  bN As Single, hN As Single,
                                  bH As Single, hH As Single) As Object
 
-        '
-        ' Drawing
-        '
         p_wmd = New WMDraw.Drawing
-
         If toClipboard Then
             p_wmd.setContext(Contexts.PNGClipboard, 160, 100, "mm")
         Else
             p_wmd.setContext(Contexts.PNGFile, 160, 100, "mm")
         End If
-
         With p_wmd
             .ContextObject.fitProportional = True
             .ContextObject.fitHeight = True
@@ -170,442 +168,9 @@ Public Class c_WMComDraw
             .ContextObject.Margin = New WMDraw.Margin(5, 5, 5, 5)
         End With
 
+        p_wmd.add(New DoveTail(r, hz, bz, lz, tz, gamma, beta, a, bN, hN, bH, hH))
+        Return p_wmd.draw()
 
-
-        '
-        ' Special dovetail points
-        '
-        '              P2
-        '   +----------x-+
-        '   | \       /  |
-        '   |  \     /   |
-        '   |   \ M /    |
-        '   |    ._. P1  |
-        '   |     P3     |
-        '   +------------+
-        '
-        Dim P1 As New Point(r * Math.Cos(radians(gamma) / 2), -hz + r - r * Math.Sin(radians(gamma) / 2))
-        Dim P2 As New Point(-((r - hz) * Math.Sin(radians(gamma) / 2) - r) / Math.Cos(radians(gamma) / 2), 0)
-        Dim P3 As New Point(0, -hz)
-
-
-        '
-        ' center point of circle
-        '
-        Dim M As New Point(0, -hz + r)
-
-        ' Mirrored points
-        Dim P1m As New Point(-r * Math.Cos(radians(gamma) / 2), -hz + r - r * Math.Sin(radians(gamma) / 2))
-        Dim P2m As New Point(+((r - hz) * Math.Sin(radians(gamma) / 2) - r) / Math.Cos(radians(gamma) / 2), 0)
-        Dim P3m As New Point(0, -hz)
-
-        '
-        ' offset points
-        '
-        Dim dZ As Single
-        dZ = lz * Math.Tan(radians(beta))
-
-        Dim P1_ As New Point(P1.x + dZ * Math.Cos(radians(gamma) / 2), P1.y - dZ * Math.Sin(radians(gamma) / 2))
-        Dim P2_ As New Point(P2.x + dZ / Math.Cos(radians(gamma) / 2), 0)
-        Dim P3_ As New Point(0, P2.y - dZ)
-
-        ' Mirrored points
-        Dim P1m_ As New Point(-P1_.x, P1_.y)
-        Dim P2m_ As New Point(-P2_.x, P2_.y)
-        Dim P3m_ As New Point(-P3_.x, P3_.y)
-
-        Dim penHidden As New pen
-        With penHidden
-            .color = WMColors.Black
-            .dashString = "7, 3"
-        End With
-
-        Dim penTransparent As New pen
-        With penTransparent
-            .thickness = 0
-        End With
-
-        Dim penThin As New pen
-        With penThin
-            .color = WMColors.Black
-        End With
-
-        Dim fillTransp As New fill
-        fillTransp.color = WMColors.CalculateTransparentColor(WMColors.LightWallnerMildBlue, 0)
-
-        Dim fillWood1 As New fill
-        fillWood1.color = WMColors.WoodLightYellow
-
-        Dim fillWood2 As New fill
-        fillWood2.color = WMColors.WoodMediumYellow
-
-        p_wmd.pen = penHidden
-
-        Dim fontSize As New size(2, WMDraw.Reference.contextMillimeters)
-
-        With p_wmd
-            'section
-
-            ' Hauptträger
-            Dim RH As New Rectangle(-1 * bN, 0, 1 * bN, -hH)
-            With RH
-                .pen = penTransparent
-                .fill = fillWood2
-            End With
-            .add(RH)
-
-            ' Hauptträger OK
-            Dim okH As New Line(-1 * bN, 0, 1 * bN, 0)
-            With okH
-                .pen = penThin
-            End With
-            .add(okH)
-
-            ' Hauptträger UK
-            Dim ukH As New Line(-1 * bN, -hH, 1 * bN, -hH)
-            With ukH
-                .pen = penThin
-            End With
-            .add(ukH)
-
-            Dim dr As New Rectangle(-bN / 2, 0, bN / 2, -hN)
-            dr.pen = penThin
-            dr.fill = fillWood1
-            .add(dr)
-
-            Dim p As New Point(M.x, M.y)
-            p.display = PointDisplay.x
-            p.displaySize = New size(1, References.contextMillimeters)
-            p.pen = penThin
-            .add(p)
-
-            'Dim txtP As New Text
-            'txtP.text = String.Format("M ({0:F1}/{1:F1})", M.x, M.y)
-            'txtP.position = M
-            'txtP.verticalAlignment = verticalAlignment.top
-            'txtP.fontSize = fontSize
-            '.add(txtP)
-
-            Dim k As New Polygon
-            Dim xi As Single
-
-            With k
-                .points.Add(P2)
-                .points.Add(P1)
-
-                For i = 0 To 21 - 1
-                    xi = gamma / 2 + (180 - gamma / 2) / 20 * i
-                    .points.Add(New Point(M.x + r * Math.Cos(radians(xi)), M.y - r * Math.Sin(radians(xi))))
-                Next
-
-                .points.Add(P1m)
-                .points.Add(P2m)
-
-                .pen = penHidden
-                .fill = fillTransp
-            End With
-            .add(k)
-
-            Dim k_ As New Polygon
-            With k_
-                .points.Add(P2_)
-                .points.Add(P1_)
-
-                For i = 0 To 21 - 1
-                    xi = gamma / 2 + (180 - gamma / 2) / 20 * i
-                    .points.Add(New Point(M.x + (r + dZ) * Math.Cos(radians(xi)), M.y - (r + dZ) * Math.Sin(radians(xi))))
-                Next
-
-                .points.Add(P1m_)
-                .points.Add(P2m_)
-
-                .pen = penThin
-                .fill = fillTransp
-            End With
-
-            .add(k_)
-
-
-            '
-            ' dimensions
-            '
-            Dim dl_Mpos As New DimensionLine()
-            With dl_Mpos
-                .startPoint = M
-                .endPoint = New Point(0, 0)
-                .offset = New size(-2, Reference.contextMillimeters)
-                .textFormatString = "0.0"
-                .textSize = fontSize
-            End With
-
-            .add(dl_Mpos)
-
-
-            Dim dl_bZ As New DimensionLine()
-            With dl_bZ
-                .startPoint = P2m
-                .endPoint = P2
-                .offset = New size(-5, Reference.contextMillimeters)
-                .textFormatString = "bZ=0.0"
-                .textSize = fontSize
-            End With
-
-            .add(dl_bZ)
-
-            Dim dl_bZ2 As New DimensionLine()
-            With dl_bZ2
-                .startPoint = P2m_
-                .endPoint = P2_
-                .offset = New size(5, Reference.contextMillimeters)
-                .textFormatString = "0.0"
-                .textSize = fontSize
-            End With
-
-            .add(dl_bZ2)
-
-            Dim dl_hZ As New DimensionLine()
-            With dl_hZ
-                .startPoint = P3
-                .endPoint = P2
-                .alignment = DimensionLine.DimAlignement.vertical
-                .offset = New size(7, Reference.contextMillimeters)
-                .textFormatString = "hZ=0.0"
-                .textSize = fontSize
-            End With
-
-            .add(dl_hZ)
-
-
-            Dim dl_ha As New DimensionLine()
-            With dl_ha
-                .startPoint = New Point(0, -hN)
-                .endPoint = New Point(P2.x, P3.y)
-                .alignment = DimensionLine.DimAlignement.vertical
-                .offset = New size(7, Reference.contextMillimeters)
-                .textFormatString = "ha=0.0"
-                .textSize = fontSize
-            End With
-
-            .add(dl_ha)
-
-            Dim dl_bN As New DimensionLine()
-            With dl_bN
-                .startPoint = New Point(-bN / 2, -hN)
-                .endPoint = New Point(bN / 2, -hN)
-                .offset = New size(7, Reference.contextMillimeters)
-                .textFormatString = "bN=0.0"
-                .textSize = fontSize
-            End With
-
-            .add(dl_bN)
-
-
-            Dim dl_hN As New DimensionLine()
-            With dl_hN
-                .startPoint = New Point(-bN / 2, -hN)
-                .endPoint = New Point(-bN / 2, 0)
-                .offset = New size(-7, Reference.contextMillimeters)
-                .textFormatString = "hN=0.0"
-                .textSize = fontSize
-            End With
-
-            .add(dl_hN)
-
-            Dim dl_MP1 As New DimensionLine()
-            With dl_MP1
-                .startPoint = M
-                .endPoint = P1
-                .offset = New size(0, Reference.contextMillimeters)
-                .textFormatString = "r=0.0"
-                .textSize = fontSize
-            End With
-
-            .add(dl_MP1)
-
-
-            '
-            ' phi
-            '
-            Dim da_phi As New DimensionAngular(P1, P2, P1m, P2m)
-            'Dim pphi As New pen
-
-            With da_phi
-                .dimSymbol = DimensionAngular.DimSymbols.Arrow
-                .textSize = fontSize
-                .textPrefix = ChrW(947) & "="
-            End With
-
-            da_phi.offset = New size(10, Reference.contextMillimeters)
-            .add(da_phi)
-        End With
-
-
-        '
-        ' Seitenansicht
-        '
-        Dim cx As Double
-        cx = 1.5 * bN
-
-        Dim rH2 As New Polygon
-        With rH2.points
-            .Add(New Point(cx + 0, 0))
-            .Add(New Point(cx + bH - tz, 0))
-            .Add(New Point(cx + bH - tz, -hN + a - dZ))
-            .Add(New Point(cx + bH, -hN + a))
-            .Add(New Point(cx + bH, -hH))
-            .Add(New Point(cx + 0, -hH))
-            .Add(New Point(cx + 0, 0))
-        End With
-
-        With rH2
-            .pen = penThin
-            .fill = fillWood2
-        End With
-
-        With p_wmd
-            .add(rH2)
-        End With
-
-        '
-        ' Nebenträger Seitenriss
-        '
-        Dim rN2 As New Polygon
-
-        Dim P40 As New Point
-        Dim P4 As New Point
-        Dim P5 As New Point
-        Dim P6 As New Point
-
-        With rN2.points
-            .Add(New Point(cx + bH + 0.5 * bN, 0))
-            P40 = New Point(cx + bH - lz, 0)
-            .Add(P40)
-            P4 = New Point(cx + bH - lz, -hN + a - dZ)
-            .Add(P4)
-            P5 = New Point(cx + bH, -hN + a)
-            .Add(P5)
-            P6 = New Point(cx + bH, -hN)
-            .Add(P6)
-
-            .Add(New Point(cx + bH + 0.5 * bN, -hN))
-        End With
-
-        With rN2
-            .pen = penThin
-            .fill = fillWood1
-        End With
-
-        With p_wmd
-            .add(rN2)
-        End With
-
-        '
-        ' Height Hauptträger
-        '
-        Dim dl_hH As New DimensionLine()
-        With dl_hH
-            .startPoint = New Point(cx, 0)
-            .endPoint = New Point(cx, -hH)
-            .offset = New size(7, Reference.contextMillimeters)
-            .textFormatString = "hH=0.0"
-            .textSize = fontSize
-        End With
-
-        p_wmd.add(dl_hH)
-
-        '
-        ' width Hauptträger
-        '
-        Dim dl_bH As New DimensionLine()
-        With dl_bH
-            .startPoint = New Point(cx, -hH)
-            .endPoint = New Point(cx + bH, -hH)
-            .offset = New size(-7, Reference.contextMillimeters)
-            .textFormatString = "bH=0.0"
-            .textSize = fontSize
-        End With
-
-        p_wmd.add(dl_bH)
-
-        '
-        ' length dovetail
-        '
-        Dim dl_lZ As New DimensionLine()
-        With dl_lZ
-            .startPoint = P4
-            .endPoint = P5
-            .alignment = DimensionLine.DimAlignement.horizontal
-            .offset = New size(-7, Reference.contextMillimeters)
-            .textFormatString = "lZ=0.0"
-            .textSize = fontSize
-        End With
-
-        p_wmd.add(dl_lZ)
-
-        Dim dl_ha2 As New DimensionLine()
-        With dl_ha2
-            .startPoint = P5
-            .endPoint = P6
-            .alignment = DimensionLine.DimAlignement.vertical
-            .offset = New size(-7, Reference.contextMillimeters)
-            .textFormatString = "ha=0.0"
-            .textSize = fontSize
-        End With
-        p_wmd.add(dl_ha2)
-
-        Dim dl_dz As New DimensionLine()
-        With dl_dz
-            .startPoint = P5
-            .endPoint = P4
-            .alignment = DimensionLine.DimAlignement.vertical
-            .offset = New size(14, Reference.contextMillimeters)
-            .textFormatString = "0.0"
-            .textSize = fontSize
-        End With
-
-        p_wmd.add(dl_dz)
-
-        '
-        ' outer height dovetail
-        '
-        Dim dl_hZ2 As New DimensionLine()
-        With dl_hZ2
-            .startPoint = P40
-            .endPoint = P4
-            .alignment = DimensionLine.DimAlignement.vertical
-            .offset = New size(7, Reference.contextMillimeters)
-            .textFormatString = "0.0"
-            .textSize = fontSize
-        End With
-
-        p_wmd.add(dl_hZ2)
-
-        '
-        ' beta
-        '
-        Dim da_betaFW As New DimensionAngular(P5, P4, P5, P6)
-
-        With da_betaFW
-            .dimSymbol = DimensionAngular.DimSymbols.Arrow
-            .textSize = fontSize
-            .textPrefix = ChrW(946) & "="
-
-        End With
-
-        da_betaFW.offset = New size(7, Reference.contextMillimeters)
-        p_wmd.add(da_betaFW)
-
-
-        Return (p_wmd.draw())
-
-    End Function
-
-    Private Function radians(ByVal angleDegrees As Double) As Double
-        Return angleDegrees * Math.PI / 180
-    End Function
-
-    Private Function radians(ByVal angleDegrees As Single) As Single
-        Return angleDegrees * Math.PI / 180
     End Function
 
     ''' <summary>
@@ -1638,23 +1203,19 @@ Public Class c_WMComDraw
     End Sub
 
     ''' <summary>
-    ''' Draw a CLT cross-section.
-    ''' Layers are ordered from top to bottom (isVertical=True) or left to right (isVertical=False).
-    ''' 0° layers (parallel to span) are shown as individual boards with random widths (100-125 mm),
-    ''' 90° layers (perpendicular) are shown as a single filled rectangle.
-    ''' Multiple CLT sections can be combined in one figure by specifying x0/y0 (bottom-left corner).
+    ''' Draw a CLT cross-section. Delegates all logic to the core CLTSection drawable.
     ''' </summary>
     ''' <param name="toClipboard">True = copy PNG to clipboard; False = write PNG to file</param>
     ''' <param name="d">Array of layer thicknesses in mm (Variant array from VBA)</param>
     ''' <param name="o">Array of grain orientations, same size as d: 0 = parallel, 90 = perpendicular</param>
-    ''' <param name="isVertical">True = vertical section, layers stacked downward; False = horizontal, layers left to right</param>
-    ''' <param name="displayWidth">Width of section perpendicular to stacking direction, in mm (default 1000)</param>
-    ''' <param name="showDimensions">0 = no labels/dimensions; 1 = thickness text per layer (e.g. "40x" / "20y"); 2 = full dimension lines (default)</param>
-    ''' <param name="drawCrossSection">True = draw as defined; False = swap 0° and 90° display (cross-section view)</param>
-    ''' <param name="x0">X coordinate of the bottom-left corner in world mm (default 0)</param>
-    ''' <param name="y0">Y coordinate of the bottom-left corner in world mm (default 0)</param>
-    ''' <param name="useHatching">False = solid fills (default); True = line hatching for 90° layers, no fill for 0° layers</param>
-    ''' <param name="resetDrawing">True = start a new drawing (default); False = append to the existing drawing for multi-section figures</param>
+    ''' <param name="isVertical">True = vertical section; False = horizontal</param>
+    ''' <param name="displayWidth">Width perpendicular to stacking direction, in mm (default 1000)</param>
+    ''' <param name="showDimensions">0 = none; 1 = thickness labels; 2 = full dimension lines (default)</param>
+    ''' <param name="drawCrossSection">True = draw as defined; False = swap 0°/90° display</param>
+    ''' <param name="x0">X of bottom-left corner in world mm (default 0)</param>
+    ''' <param name="y0">Y of bottom-left corner in world mm (default 0)</param>
+    ''' <param name="resetDrawing">True = new drawing (default); False = append to existing</param>
+    ''' <param name="useHatching">True = line hatching for 0° layers, transparent for 90°</param>
     Public Function drawCLTSection(toClipboard As Boolean,
                                    d As Object,
                                    o As Object,
@@ -1682,239 +1243,25 @@ Public Class c_WMComDraw
             End With
         End If
 
-        ' --- Pens ---
-        Dim penLayer As New pen             ' all layer borders (0° boards + 90° rectangles)
-        With penLayer
-            .color = WMColors.DarkGrey
-            .thickness = 0.15
-            .thicknessReference = Reference.contextMillimeters
-        End With
-
-        Dim penBoard As New pen             ' individual board joints within 0° layers
-        With penBoard
-            .color = WMColors.DarkGrey
-            .thickness = 0.15
-            .thicknessReference = Reference.contextMillimeters
-        End With
-
-        Dim penCircumference As New pen     ' outer boundary of the full element
-        With penCircumference
-            .color = WMColors.Black
-            .thickness = 0.3
-            .thicknessReference = Reference.contextMillimeters
-        End With
-
-        ' --- Fills ---
-        Dim fill0 As New fill               ' 0° parallel
-        Dim fill90 As New fill              ' 90° perpendicular
-
-        If useHatching Then
-            ' 90° layers: no fill (transparent); 0° layers: line hatching
-            ' Hatch angle rotates 90° with isVertical so lines always cross the layer grain
-            Dim hatchAngle As Double = If(isVertical, 45, 135)
-            fill90.color = WMColors.Transparent
-            With fill0
-                .type = fill.fillType.linearHatching
-                .setLinearHatch(WMColors.DarkGrey, 0.7, 1, 3, hatchAngle)
-            End With
-        Else
-            fill0.color = WMColors.WoodMediumYellow
-            fill90.color = WMColors.WoodLightYellow
-        End If
-
-        Dim fontSize As New size(2, WMDraw.Reference.contextMillimeters)
-
+        ' Convert COM Variant arrays to typed arrays
         Dim n As Integer = UBound(d) - LBound(d) + 1
-
-        ' Pre-calculate total thickness to convert bottom-left (x0,y0) to top-left origin
-        Dim totalThickness As Double = 0
+        Dim layers(n - 1) As Double
+        Dim orients(n - 1) As Integer
         For i As Integer = 0 To n - 1
-            totalThickness += CDbl(d(LBound(d) + i))
+            layers(i) = CDbl(d(LBound(d) + i))
+            orients(i) = CInt(o(LBound(o) + i))
         Next
 
-        ' xOff = x of left edge
-        ' yOff = y of top edge (WMDraw: y decreases downward, so top > bottom)
-        Dim xOff As Double = x0
-        Dim yOff As Double = If(isVertical, y0 + totalThickness, y0 + displayWidth)
+        Dim clt As New CLTSection(layers, orients)
+        clt.isVertical = isVertical
+        clt.displayWidth = displayWidth
+        clt.showDimensions = showDimensions
+        clt.drawCrossSection = drawCrossSection
+        clt.x0 = x0
+        clt.y0 = y0
+        clt.useHatching = useHatching
 
-        Dim pos As Double = 0
-
-        Randomize()
-
-        With p_wmd
-            For i As Integer = 0 To n - 1
-
-                Dim d_i As Double = CDbl(d(LBound(d) + i))
-                Dim o_i As Integer = CInt(o(LBound(o) + i))
-
-                ' Swap 0° and 90° display if drawCrossSection = False
-                If Not drawCrossSection Then
-                    o_i = If(o_i = 0, 90, 0)
-                End If
-
-                If isVertical Then
-                    '
-                    ' Vertical section: top-left at (xOff, yOff), layers stacked downward
-                    '
-
-                    If o_i = 0 Then
-                        ' 0° layer: individual boards as vertical strips with random widths
-                        Dim cx As Double = 0
-                        Do While cx < displayWidth
-                            Dim dx As Double = Int((125 - 100 + 1) * Rnd() + 100)
-                            If displayWidth - (cx + dx) < 30 Then dx = displayWidth - cx
-                            Dim board As New Rectangle(xOff + cx, yOff - pos, xOff + cx + dx, yOff - (pos + d_i))
-                            board.pen = penBoard
-                            board.fill = fill0
-                            .add(board)
-                            cx += dx
-                            If cx >= displayWidth Then Exit Do
-                        Loop
-                    Else
-                        ' 90° layer: single filled rectangle
-                        Dim r As New Rectangle(xOff, yOff - pos, xOff + displayWidth, yOff - (pos + d_i))
-                        r.pen = penLayer
-                        r.fill = fill90
-                        .add(r)
-                    End If
-
-                    ' Layer label / dimensions (vertical)
-                    If showDimensions = 1 AndAlso d_i >= 8 Then
-                        ' Mode 1: thickness with x/y suffix
-                        Dim lbl As New Text(xOff + displayWidth * 0.02, yOff - (pos + d_i / 2),
-                                            CInt(d_i).ToString() & If(o_i = 0, "x", "y"), 1.8)
-                        lbl.horizontalAlignment = horizontalAlignment.left
-                        lbl.verticalAlignment = verticalAlignment.center
-                        .add(lbl)
-                    ElseIf showDimensions = 2 Then
-                        ' Mode 2: orientation label + dimension line
-                        If d_i >= 8 Then
-                            Dim lbl As New Text(xOff + displayWidth * 0.02, yOff - (pos + d_i / 2),
-                                                o_i.ToString() & ChrW(176), 1.8)
-                            lbl.horizontalAlignment = horizontalAlignment.left
-                            lbl.verticalAlignment = verticalAlignment.center
-                            .add(lbl)
-                        End If
-                        Dim dl As New DimensionLine()
-                        dl.startPoint = New Point(xOff + displayWidth, yOff - pos)
-                        dl.endPoint = New Point(xOff + displayWidth, yOff - (pos + d_i))
-                        dl.offset = New size(8, Reference.contextMillimeters)
-                        dl.textFormatString = "0.0"
-                        dl.textSize = fontSize
-                        .add(dl)
-                    End If
-
-                Else
-                    '
-                    ' Horizontal layout: top-left at (xOff, yOff), layers stacked rightward
-                    '
-
-                    If o_i = 0 Then
-                        ' 0° layer: individual boards as horizontal strips with random heights
-                        Dim cy As Double = 0
-                        Do While cy < displayWidth
-                            Dim dy As Double = Int((125 - 100 + 1) * Rnd() + 100)
-                            If displayWidth - (cy + dy) < 30 Then dy = displayWidth - cy
-                            Dim board As New Rectangle(xOff + pos, yOff - cy, xOff + pos + d_i, yOff - (cy + dy))
-                            board.pen = penBoard
-                            board.fill = fill0
-                            .add(board)
-                            cy += dy
-                            If cy >= displayWidth Then Exit Do
-                        Loop
-                    Else
-                        ' 90° layer: single filled rectangle
-                        Dim r As New Rectangle(xOff + pos, yOff, xOff + pos + d_i, y0)
-                        r.pen = penLayer
-                        r.fill = fill90
-                        .add(r)
-                    End If
-
-                    ' Layer label / dimensions (horizontal)
-                    If showDimensions = 1 AndAlso d_i >= 8 Then
-                        ' Mode 1: thickness with x/y suffix — rotated to fit vertical band
-                        Dim lbl As New Text(xOff + pos + d_i / 2, yOff - displayWidth / 2,
-                                            CInt(d_i).ToString() & If(o_i = 0, "x", "y"), 1.8)
-                        lbl.horizontalAlignment = horizontalAlignment.center
-                        lbl.verticalAlignment = verticalAlignment.center
-                        lbl.angle = 90
-                        .add(lbl)
-                    ElseIf showDimensions = 2 Then
-                        ' Mode 2: orientation label + dimension line — rotated to fit vertical band
-                        If d_i >= 8 Then
-                            Dim lbl As New Text(xOff + pos + d_i / 2, yOff - displayWidth / 2,
-                                                o_i.ToString() & ChrW(176), 1.8)
-                            lbl.horizontalAlignment = horizontalAlignment.center
-                            lbl.verticalAlignment = verticalAlignment.center
-                            lbl.angle = 90
-                            .add(lbl)
-                        End If
-                        Dim dl As New DimensionLine()
-                        dl.startPoint = New Point(xOff + pos, yOff)
-                        dl.endPoint = New Point(xOff + pos + d_i, yOff)
-                        dl.offset = New size(-8, Reference.contextMillimeters)
-                        dl.textFormatString = "0.0"
-                        dl.textSize = fontSize
-                        .add(dl)
-                    End If
-
-                End If
-
-                pos += d_i
-            Next
-
-            ' Circumference: outer boundary of the full element drawn on top
-            Dim rcOuter As New Rectangle(xOff, yOff,
-                                         If(isVertical, xOff + displayWidth, xOff + pos),
-                                         If(isVertical, y0, y0))
-            rcOuter.pen = penCircumference
-            Dim fillNone As New fill()
-            fillNone.color = WMColors.Transparent
-            rcOuter.fill = fillNone
-            rcOuter.zIndex = 10
-            .add(rcOuter)
-
-            ' Total thickness + display width dimension lines (mode 2 only)
-            If showDimensions = 2 Then
-                If isVertical Then
-                    ' Total thickness on the right (further out than per-layer lines)
-                    Dim dlTotal As New DimensionLine()
-                    dlTotal.startPoint = New Point(xOff + displayWidth, yOff)
-                    dlTotal.endPoint = New Point(xOff + displayWidth, y0)
-                    dlTotal.offset = New size(16, Reference.contextMillimeters)
-                    dlTotal.textFormatString = "t=0.0"
-                    dlTotal.textSize = fontSize
-                    .add(dlTotal)
-                    ' Width label at top
-                    Dim dlW As New DimensionLine()
-                    dlW.startPoint = New Point(xOff, yOff)
-                    dlW.endPoint = New Point(xOff + displayWidth, yOff)
-                    dlW.offset = New size(-8, Reference.contextMillimeters)
-                    dlW.textFormatString = "0 mm"
-                    dlW.textSize = fontSize
-                    .add(dlW)
-                Else
-                    ' Total thickness on the bottom
-                    Dim dlTotal As New DimensionLine()
-                    dlTotal.startPoint = New Point(xOff, y0)
-                    dlTotal.endPoint = New Point(xOff + pos, y0)
-                    dlTotal.offset = New size(16, Reference.contextMillimeters)
-                    dlTotal.textFormatString = "t=0.0"
-                    dlTotal.textSize = fontSize
-                    .add(dlTotal)
-                    ' Height label on the left
-                    Dim dlH As New DimensionLine()
-                    dlH.startPoint = New Point(xOff, yOff)
-                    dlH.endPoint = New Point(xOff, y0)
-                    dlH.offset = New size(-8, Reference.contextMillimeters)
-                    dlH.textFormatString = "0 mm"
-                    dlH.textSize = fontSize
-                    .add(dlH)
-                End If
-            End If
-
-        End With
-
+        p_wmd.add(clt)
         Return p_wmd.draw()
 
     End Function

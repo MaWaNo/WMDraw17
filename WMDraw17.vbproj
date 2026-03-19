@@ -170,6 +170,8 @@
     <Compile Include="Coordinate.vb" />
     <Compile Include="Drawables\Drawable.vb" />
     <Compile Include="Drawables\Arrow.vb" />
+    <Compile Include="Drawables\CLTSection.vb" />
+    <Compile Include="Drawables\DoveTail.vb" />
     <Compile Include="Drawing.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
