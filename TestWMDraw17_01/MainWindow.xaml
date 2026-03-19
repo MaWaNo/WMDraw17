@@ -1,4 +1,4 @@
-﻿<Window x:Class="MainWindow"
+<Window x:Class="MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,16 +7,22 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="395.259" Width="597.414">
 
-    <Canvas>
-        <StackPanel >
-            <Button x:Name="button" Content="Zeichnen" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75" Canvas.Left="-85" Canvas.Top="-42"/>
-            <Button x:Name="buttonB" Content="DrawFraction" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75" Canvas.Left="-85" Canvas.Top="-42"/>
-            <Button x:Name="button1" Content="Geometrie" Canvas.Left="40" Canvas.Top="-42" Width="75"/>
-            <Button x:Name="button2" Content="TestCom" Canvas.Left="249" Canvas.Top="-42" Width="75"/>
-            <Button x:Name="button3" Content="File" Canvas.Left="249" Canvas.Top="-42" Width="75"/>
-            <Button x:Name="button4" Content="Test1" HorizontalAlignment="Left" VerticalAlignment="Top" Width="75"/>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="90"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Column="0" Margin="5">
+            <Button x:Name="button"    Content="Zeichnen"     Width="75" Margin="0,2"/>
+            <Button x:Name="buttonB"   Content="DrawFraction" Width="75" Margin="0,2"/>
+            <Button x:Name="button1"   Content="Geometrie"    Width="75" Margin="0,2"/>
+            <Button x:Name="button2"   Content="TestCom"      Width="75" Margin="0,2"/>
+            <Button x:Name="button3"   Content="File"         Width="75" Margin="0,2"/>
+            <Button x:Name="button4"   Content="Test1"        Width="75" Margin="0,2"/>
+            <Button x:Name="buttonCLT" Content="CLT"          Width="75" Margin="0,2"/>
         </StackPanel>
 
-        <Canvas x:Name="canvas1" HorizontalAlignment="Right" Height="342" VerticalAlignment="Bottom" Width="456" Background="AliceBlue" Canvas.Left="109" Canvas.Top="10"/>
-    </Canvas>
+        <Canvas x:Name="canvas1" Grid.Column="1" Margin="5" Background="AliceBlue"/>
+    </Grid>
 </Window>

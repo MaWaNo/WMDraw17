@@ -52,6 +52,17 @@ Public Class c_WMComDraw
     Public Sub clear()
         p_wmd = New Drawing
     End Sub
+
+    ''' <summary>
+    ''' Access the internal Drawing object. Not exposed to COM.
+    ''' Allows test code to redirect the same Drawing to a WPF canvas after a draw method has been called.
+    ''' </summary>
+    <System.Runtime.InteropServices.ComVisible(False)>
+    Public ReadOnly Property drawing As Drawing
+        Get
+            Return p_wmd
+        End Get
+    End Property
     ''' <summary>
     ''' Add a line
     ''' </summary>
@@ -1625,6 +1636,288 @@ Public Class c_WMComDraw
         End Select
 
     End Sub
+
+    ''' <summary>
+    ''' Draw a CLT cross-section.
+    ''' Layers are ordered from top to bottom (isVertical=True) or left to right (isVertical=False).
+    ''' 0° layers (parallel to span) are shown as individual boards with random widths (100-125 mm),
+    ''' 90° layers (perpendicular) are shown as a single filled rectangle.
+    ''' Multiple CLT sections can be combined in one figure by specifying x0/y0 (bottom-left corner).
+    ''' </summary>
+    ''' <param name="toClipboard">True = copy PNG to clipboard; False = write PNG to file</param>
+    ''' <param name="d">Array of layer thicknesses in mm (Variant array from VBA)</param>
+    ''' <param name="o">Array of grain orientations, same size as d: 0 = parallel, 90 = perpendicular</param>
+    ''' <param name="isVertical">True = vertical section, layers stacked downward; False = horizontal, layers left to right</param>
+    ''' <param name="displayWidth">Width of section perpendicular to stacking direction, in mm (default 1000)</param>
+    ''' <param name="showDimensions">0 = no labels/dimensions; 1 = thickness text per layer (e.g. "40x" / "20y"); 2 = full dimension lines (default)</param>
+    ''' <param name="drawCrossSection">True = draw as defined; False = swap 0° and 90° display (cross-section view)</param>
+    ''' <param name="x0">X coordinate of the bottom-left corner in world mm (default 0)</param>
+    ''' <param name="y0">Y coordinate of the bottom-left corner in world mm (default 0)</param>
+    ''' <param name="useHatching">False = solid fills (default); True = line hatching for 90° layers, no fill for 0° layers</param>
+    ''' <param name="resetDrawing">True = start a new drawing (default); False = append to the existing drawing for multi-section figures</param>
+    Public Function drawCLTSection(toClipboard As Boolean,
+                                   d As Object,
+                                   o As Object,
+                                   Optional isVertical As Boolean = True,
+                                   Optional displayWidth As Single = 1000,
+                                   Optional showDimensions As Integer = 2,
+                                   Optional drawCrossSection As Boolean = True,
+                                   Optional x0 As Double = 0,
+                                   Optional y0 As Double = 0,
+                                   Optional resetDrawing As Boolean = True,
+                                   Optional useHatching As Boolean = False) As Object
+
+        If resetDrawing Then
+            p_wmd = New WMDraw.Drawing
+            If toClipboard Then
+                p_wmd.setContext(Contexts.PNGClipboard, 160, 100, "mm")
+            Else
+                p_wmd.setContext(Contexts.PNGFile, 160, 100, "mm")
+            End If
+            With p_wmd
+                .ContextObject.fitProportional = True
+                .ContextObject.fitHeight = True
+                .ContextObject.fitWidth = True
+                .ContextObject.Margin = New WMDraw.Margin(10, 10, 10, 10)
+            End With
+        End If
+
+        ' --- Pens ---
+        Dim penLayer As New pen             ' all layer borders (0° boards + 90° rectangles)
+        With penLayer
+            .color = WMColors.DarkGrey
+            .thickness = 0.15
+            .thicknessReference = Reference.contextMillimeters
+        End With
+
+        Dim penBoard As New pen             ' individual board joints within 0° layers
+        With penBoard
+            .color = WMColors.DarkGrey
+            .thickness = 0.15
+            .thicknessReference = Reference.contextMillimeters
+        End With
+
+        Dim penCircumference As New pen     ' outer boundary of the full element
+        With penCircumference
+            .color = WMColors.Black
+            .thickness = 0.3
+            .thicknessReference = Reference.contextMillimeters
+        End With
+
+        ' --- Fills ---
+        Dim fill0 As New fill               ' 0° parallel
+        Dim fill90 As New fill              ' 90° perpendicular
+
+        If useHatching Then
+            ' 90° layers: no fill (transparent); 0° layers: line hatching
+            ' Hatch angle rotates 90° with isVertical so lines always cross the layer grain
+            Dim hatchAngle As Double = If(isVertical, 45, 135)
+            fill90.color = WMColors.Transparent
+            With fill0
+                .type = fill.fillType.linearHatching
+                .setLinearHatch(WMColors.DarkGrey, 0.7, 1, 3, hatchAngle)
+            End With
+        Else
+            fill0.color = WMColors.WoodMediumYellow
+            fill90.color = WMColors.WoodLightYellow
+        End If
+
+        Dim fontSize As New size(2, WMDraw.Reference.contextMillimeters)
+
+        Dim n As Integer = UBound(d) - LBound(d) + 1
+
+        ' Pre-calculate total thickness to convert bottom-left (x0,y0) to top-left origin
+        Dim totalThickness As Double = 0
+        For i As Integer = 0 To n - 1
+            totalThickness += CDbl(d(LBound(d) + i))
+        Next
+
+        ' xOff = x of left edge
+        ' yOff = y of top edge (WMDraw: y decreases downward, so top > bottom)
+        Dim xOff As Double = x0
+        Dim yOff As Double = If(isVertical, y0 + totalThickness, y0 + displayWidth)
+
+        Dim pos As Double = 0
+
+        Randomize()
+
+        With p_wmd
+            For i As Integer = 0 To n - 1
+
+                Dim d_i As Double = CDbl(d(LBound(d) + i))
+                Dim o_i As Integer = CInt(o(LBound(o) + i))
+
+                ' Swap 0° and 90° display if drawCrossSection = False
+                If Not drawCrossSection Then
+                    o_i = If(o_i = 0, 90, 0)
+                End If
+
+                If isVertical Then
+                    '
+                    ' Vertical section: top-left at (xOff, yOff), layers stacked downward
+                    '
+
+                    If o_i = 0 Then
+                        ' 0° layer: individual boards as vertical strips with random widths
+                        Dim cx As Double = 0
+                        Do While cx < displayWidth
+                            Dim dx As Double = Int((125 - 100 + 1) * Rnd() + 100)
+                            If displayWidth - (cx + dx) < 30 Then dx = displayWidth - cx
+                            Dim board As New Rectangle(xOff + cx, yOff - pos, xOff + cx + dx, yOff - (pos + d_i))
+                            board.pen = penBoard
+                            board.fill = fill0
+                            .add(board)
+                            cx += dx
+                            If cx >= displayWidth Then Exit Do
+                        Loop
+                    Else
+                        ' 90° layer: single filled rectangle
+                        Dim r As New Rectangle(xOff, yOff - pos, xOff + displayWidth, yOff - (pos + d_i))
+                        r.pen = penLayer
+                        r.fill = fill90
+                        .add(r)
+                    End If
+
+                    ' Layer label / dimensions (vertical)
+                    If showDimensions = 1 AndAlso d_i >= 8 Then
+                        ' Mode 1: thickness with x/y suffix
+                        Dim lbl As New Text(xOff + displayWidth * 0.02, yOff - (pos + d_i / 2),
+                                            CInt(d_i).ToString() & If(o_i = 0, "x", "y"), 1.8)
+                        lbl.horizontalAlignment = horizontalAlignment.left
+                        lbl.verticalAlignment = verticalAlignment.center
+                        .add(lbl)
+                    ElseIf showDimensions = 2 Then
+                        ' Mode 2: orientation label + dimension line
+                        If d_i >= 8 Then
+                            Dim lbl As New Text(xOff + displayWidth * 0.02, yOff - (pos + d_i / 2),
+                                                o_i.ToString() & ChrW(176), 1.8)
+                            lbl.horizontalAlignment = horizontalAlignment.left
+                            lbl.verticalAlignment = verticalAlignment.center
+                            .add(lbl)
+                        End If
+                        Dim dl As New DimensionLine()
+                        dl.startPoint = New Point(xOff + displayWidth, yOff - pos)
+                        dl.endPoint = New Point(xOff + displayWidth, yOff - (pos + d_i))
+                        dl.offset = New size(8, Reference.contextMillimeters)
+                        dl.textFormatString = "0.0"
+                        dl.textSize = fontSize
+                        .add(dl)
+                    End If
+
+                Else
+                    '
+                    ' Horizontal layout: top-left at (xOff, yOff), layers stacked rightward
+                    '
+
+                    If o_i = 0 Then
+                        ' 0° layer: individual boards as horizontal strips with random heights
+                        Dim cy As Double = 0
+                        Do While cy < displayWidth
+                            Dim dy As Double = Int((125 - 100 + 1) * Rnd() + 100)
+                            If displayWidth - (cy + dy) < 30 Then dy = displayWidth - cy
+                            Dim board As New Rectangle(xOff + pos, yOff - cy, xOff + pos + d_i, yOff - (cy + dy))
+                            board.pen = penBoard
+                            board.fill = fill0
+                            .add(board)
+                            cy += dy
+                            If cy >= displayWidth Then Exit Do
+                        Loop
+                    Else
+                        ' 90° layer: single filled rectangle
+                        Dim r As New Rectangle(xOff + pos, yOff, xOff + pos + d_i, y0)
+                        r.pen = penLayer
+                        r.fill = fill90
+                        .add(r)
+                    End If
+
+                    ' Layer label / dimensions (horizontal)
+                    If showDimensions = 1 AndAlso d_i >= 8 Then
+                        ' Mode 1: thickness with x/y suffix — rotated to fit vertical band
+                        Dim lbl As New Text(xOff + pos + d_i / 2, yOff - displayWidth / 2,
+                                            CInt(d_i).ToString() & If(o_i = 0, "x", "y"), 1.8)
+                        lbl.horizontalAlignment = horizontalAlignment.center
+                        lbl.verticalAlignment = verticalAlignment.center
+                        lbl.angle = 90
+                        .add(lbl)
+                    ElseIf showDimensions = 2 Then
+                        ' Mode 2: orientation label + dimension line — rotated to fit vertical band
+                        If d_i >= 8 Then
+                            Dim lbl As New Text(xOff + pos + d_i / 2, yOff - displayWidth / 2,
+                                                o_i.ToString() & ChrW(176), 1.8)
+                            lbl.horizontalAlignment = horizontalAlignment.center
+                            lbl.verticalAlignment = verticalAlignment.center
+                            lbl.angle = 90
+                            .add(lbl)
+                        End If
+                        Dim dl As New DimensionLine()
+                        dl.startPoint = New Point(xOff + pos, yOff)
+                        dl.endPoint = New Point(xOff + pos + d_i, yOff)
+                        dl.offset = New size(-8, Reference.contextMillimeters)
+                        dl.textFormatString = "0.0"
+                        dl.textSize = fontSize
+                        .add(dl)
+                    End If
+
+                End If
+
+                pos += d_i
+            Next
+
+            ' Circumference: outer boundary of the full element drawn on top
+            Dim rcOuter As New Rectangle(xOff, yOff,
+                                         If(isVertical, xOff + displayWidth, xOff + pos),
+                                         If(isVertical, y0, y0))
+            rcOuter.pen = penCircumference
+            Dim fillNone As New fill()
+            fillNone.color = WMColors.Transparent
+            rcOuter.fill = fillNone
+            rcOuter.zIndex = 10
+            .add(rcOuter)
+
+            ' Total thickness + display width dimension lines (mode 2 only)
+            If showDimensions = 2 Then
+                If isVertical Then
+                    ' Total thickness on the right (further out than per-layer lines)
+                    Dim dlTotal As New DimensionLine()
+                    dlTotal.startPoint = New Point(xOff + displayWidth, yOff)
+                    dlTotal.endPoint = New Point(xOff + displayWidth, y0)
+                    dlTotal.offset = New size(16, Reference.contextMillimeters)
+                    dlTotal.textFormatString = "t=0.0"
+                    dlTotal.textSize = fontSize
+                    .add(dlTotal)
+                    ' Width label at top
+                    Dim dlW As New DimensionLine()
+                    dlW.startPoint = New Point(xOff, yOff)
+                    dlW.endPoint = New Point(xOff + displayWidth, yOff)
+                    dlW.offset = New size(-8, Reference.contextMillimeters)
+                    dlW.textFormatString = "0 mm"
+                    dlW.textSize = fontSize
+                    .add(dlW)
+                Else
+                    ' Total thickness on the bottom
+                    Dim dlTotal As New DimensionLine()
+                    dlTotal.startPoint = New Point(xOff, y0)
+                    dlTotal.endPoint = New Point(xOff + pos, y0)
+                    dlTotal.offset = New size(16, Reference.contextMillimeters)
+                    dlTotal.textFormatString = "t=0.0"
+                    dlTotal.textSize = fontSize
+                    .add(dlTotal)
+                    ' Height label on the left
+                    Dim dlH As New DimensionLine()
+                    dlH.startPoint = New Point(xOff, yOff)
+                    dlH.endPoint = New Point(xOff, y0)
+                    dlH.offset = New size(-8, Reference.contextMillimeters)
+                    dlH.textFormatString = "0 mm"
+                    dlH.textSize = fontSize
+                    .add(dlH)
+                End If
+            End If
+
+        End With
+
+        Return p_wmd.draw()
+
+    End Function
 
     Public Sub test3()
         Dim p As New Drawing

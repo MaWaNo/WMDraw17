@@ -260,4 +260,81 @@ Class MainWindow
 
         wmd.draw()
     End Sub
+
+    Private Sub buttonCLT_Click(sender As Object, e As RoutedEventArgs) Handles buttonCLT.Click
+        ' 5-layer CLT: 40/20/20/20/40 mm, alternating 0°/90°
+        Dim d(4) As Double
+        d(0) = 40 : d(1) = 20 : d(2) = 20 : d(3) = 20 : d(4) = 40
+
+        Dim o(4) As Integer
+        o(0) = 0 : o(1) = 90 : o(2) = 0 : o(3) = 90 : o(4) = 0
+
+        Dim wmcom As New c_WMComDraw
+        Dim gap As Double = 50          ' mm gap between rows/columns
+        Dim w As Double = 400           ' display width per section
+        Dim tTotal As Double = 140      ' total CLT thickness (40+20+20+20+40)
+        Dim xStep As Double = w + gap   ' x spacing between sections in a row
+
+        ' yBase tracks the bottom-left y of each row; decremented after each row
+        Dim yBase As Double = 0
+
+        ' --- Row 1: isVertical=True,  showDimensions=2 (full dim lines) ---
+        wmcom.drawCLTSection(True, d, o, True, w, 2, True, 0, yBase, True)
+        wmcom.drawCLTSection(True, d, o, True, w, 2, True, xStep, yBase, False)
+        wmcom.drawCLTSection(True, d, o, True, w, 2, False, 2 * xStep, yBase, False)
+        yBase -= tTotal + gap
+
+        ' --- Row 2: isVertical=False, showDimensions=2 (full dim lines) ---
+        wmcom.drawCLTSection(True, d, o, False, w, 2, True, 0, yBase, False)
+        wmcom.drawCLTSection(True, d, o, False, w, 2, True, xStep, yBase, False)
+        wmcom.drawCLTSection(True, d, o, False, w, 2, False, 2 * xStep, yBase, False)
+        yBase -= w + gap
+
+        ' --- Row 3: isVertical=True,  showDimensions=1 (compact x/y labels) ---
+        wmcom.drawCLTSection(True, d, o, True, w, 1, True, 0, yBase, False)
+        wmcom.drawCLTSection(True, d, o, True, w, 1, True, xStep, yBase, False)
+        wmcom.drawCLTSection(True, d, o, True, w, 1, False, 2 * xStep, yBase, False)
+        yBase -= tTotal + gap
+
+        ' --- Row 4: isVertical=False, showDimensions=1 (compact x/y labels) ---
+        wmcom.drawCLTSection(True, d, o, False, w, 1, True, 0, yBase, False)
+        wmcom.drawCLTSection(True, d, o, False, w, 1, True, xStep, yBase, False)
+        wmcom.drawCLTSection(True, d, o, False, w, 1, False, 2 * xStep, yBase, False)
+        yBase -= w + gap
+
+        ' --- Row 5: isVertical=True,  showDimensions=0 (no labels) ---
+        wmcom.drawCLTSection(True, d, o, True, w, 0, True, 0, yBase, False)
+        wmcom.drawCLTSection(True, d, o, True, w, 0, True, xStep, yBase, False)
+        wmcom.drawCLTSection(True, d, o, True, w, 0, False, 2 * xStep, yBase, False)
+        yBase -= tTotal + gap
+
+        ' --- Row 6: isVertical=False, showDimensions=0 (no labels) ---
+        wmcom.drawCLTSection(True, d, o, False, w, 0, True, 0, yBase, False)
+        wmcom.drawCLTSection(True, d, o, False, w, 0, True, xStep, yBase, False)
+        wmcom.drawCLTSection(True, d, o, False, w, 0, False, 2 * xStep, yBase, False)
+        yBase -= w + gap
+
+        ' --- Row 7: isVertical=True,  showDimensions=2, useHatching=True ---
+        wmcom.drawCLTSection(True, d, o, True, w, 2, True, 0, yBase, False, True)
+        wmcom.drawCLTSection(True, d, o, True, w, 2, True, xStep, yBase, False, True)
+        wmcom.drawCLTSection(True, d, o, True, w, 2, False, 2 * xStep, yBase, False, True)
+        yBase -= tTotal + gap
+
+        ' --- Row 8: isVertical=False, showDimensions=2, useHatching=True ---
+        wmcom.drawCLTSection(True, d, o, False, w, 2, True, 0, yBase, False, True)
+        wmcom.drawCLTSection(True, d, o, False, w, 2, True, xStep, yBase, False, True)
+        wmcom.drawCLTSection(True, d, o, False, w, 2, False, 2 * xStep, yBase, False, True)
+
+        ' Render all sections to canvas1 for visual inspection
+        Dim wmd As Drawing = wmcom.drawing
+        wmd.ContextObject.Item = Me.canvas1
+        wmd.Context = Contexts.WPFCanvas
+        wmd.ContextObject.Margin = New WMDraw.Margin(10)
+        wmd.ContextObject.Margin.Reference = Reference.contextMillimeters
+        wmd.ContextObject.fitHeight = True
+        wmd.ContextObject.fitWidth = True
+        wmd.ContextObject.fitProportional = True
+        wmd.draw()
+    End Sub
+
 End Class

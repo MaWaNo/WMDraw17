@@ -184,6 +184,12 @@ Namespace WMDraw
             End Get
         End Property
 
+        Public Shared ReadOnly Property Transparent As Color
+            Get
+                Return Color.FromArgb(0, 255, 255, 255)
+            End Get
+        End Property
+
         Public Shared ReadOnly Property White As Color
             Get
                 Return Color.FromRgb(255, 255, 255)
