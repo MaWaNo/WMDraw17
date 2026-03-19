@@ -117,184 +117,1442 @@ Public Class c_WMComDraw
         End Try
     End Sub
 
-    Public Function drawDowelGrid(toClipboard As Boolean, d As Single, alpha1 As Single, alpha2 As Single, a1 As Single, nRows As Integer, nColumns As Integer,
-                                  Optional a2 As Single = -1, Optional a3 As Single = -1, Optional a4 As Single = -1)
+    ''' <summary>
+    ''' 
+    ''' </summary>
+    ''' <param name="toClipboard"></param>
+    ''' <param name="r"></param>
+    ''' <param name=" hz"></param>
+    ''' <param name=" bz"></param>
+    ''' <param name=" lz"></param>
+    ''' <param name=" tz"></param>
+    ''' <param name=" gamma"></param>
+    ''' <param name=" beta"></param>y
+    ''' <param name=" a"></param>
+    ''' <param name=" bN"></param>
+    ''' <param name=" hN"></param>
+    ''' <param name=" bH"></param> 
+    ''' <param name=" hH"></param> 
+    ''' <returns></returns>
+    Public Function drawDoveTail(toClipboard As Boolean, typeIndex As Integer,
+                                 r As Single, hz As Single, bz As Single,
+                                 lz As Single, tz As Single, gamma As Single,
+                                 beta As Single, a As Single,
+                                 bN As Single, hN As Single,
+                                 bH As Single, hH As Single) As Object
 
+        '
+        ' Drawing
+        '
+        p_wmd = New WMDraw.Drawing
+
+        If toClipboard Then
+            p_wmd.setContext(Contexts.PNGClipboard, 160, 100, "mm")
+        Else
+            p_wmd.setContext(Contexts.PNGFile, 160, 100, "mm")
+        End If
+
+        With p_wmd
+            .ContextObject.fitProportional = True
+            .ContextObject.fitHeight = True
+            .ContextObject.fitWidth = True
+            .ContextObject.Margin = New WMDraw.Margin(5, 5, 5, 5)
+        End With
+
+
+
+        '
+        ' Special dovetail points
+        '
+        '              P2
+        '   +----------x-+
+        '   | \       /  |
+        '   |  \     /   |
+        '   |   \ M /    |
+        '   |    ._. P1  |
+        '   |     P3     |
+        '   +------------+
+        '
+        Dim P1 As New Point(r * Math.Cos(radians(gamma) / 2), -hz + r - r * Math.Sin(radians(gamma) / 2))
+        Dim P2 As New Point(-((r - hz) * Math.Sin(radians(gamma) / 2) - r) / Math.Cos(radians(gamma) / 2), 0)
+        Dim P3 As New Point(0, -hz)
+
+
+        '
+        ' center point of circle
+        '
+        Dim M As New Point(0, -hz + r)
+
+        ' Mirrored points
+        Dim P1m As New Point(-r * Math.Cos(radians(gamma) / 2), -hz + r - r * Math.Sin(radians(gamma) / 2))
+        Dim P2m As New Point(+((r - hz) * Math.Sin(radians(gamma) / 2) - r) / Math.Cos(radians(gamma) / 2), 0)
+        Dim P3m As New Point(0, -hz)
+
+        '
+        ' offset points
+        '
+        Dim dZ As Single
+        dZ = lz * Math.Tan(radians(beta))
+
+        Dim P1_ As New Point(P1.x + dZ * Math.Cos(radians(gamma) / 2), P1.y - dZ * Math.Sin(radians(gamma) / 2))
+        Dim P2_ As New Point(P2.x + dZ / Math.Cos(radians(gamma) / 2), 0)
+        Dim P3_ As New Point(0, P2.y - dZ)
+
+        ' Mirrored points
+        Dim P1m_ As New Point(-P1_.x, P1_.y)
+        Dim P2m_ As New Point(-P2_.x, P2_.y)
+        Dim P3m_ As New Point(-P3_.x, P3_.y)
+
+        Dim penHidden As New pen
+        With penHidden
+            .color = WMColors.Black
+            .dashString = "7, 3"
+        End With
+
+        Dim penTransparent As New pen
+        With penTransparent
+            .thickness = 0
+        End With
+
+        Dim penThin As New pen
+        With penThin
+            .color = WMColors.Black
+        End With
+
+        Dim fillTransp As New fill
+        fillTransp.color = WMColors.CalculateTransparentColor(WMColors.LightWallnerMildBlue, 0)
+
+        Dim fillWood1 As New fill
+        fillWood1.color = WMColors.WoodLightYellow
+
+        Dim fillWood2 As New fill
+        fillWood2.color = WMColors.WoodMediumYellow
+
+        p_wmd.pen = penHidden
+
+        Dim fontSize As New size(2, WMDraw.Reference.contextMillimeters)
+
+        With p_wmd
+            'section
+
+            ' Hauptträger
+            Dim RH As New Rectangle(-1 * bN, 0, 1 * bN, -hH)
+            With RH
+                .pen = penTransparent
+                .fill = fillWood2
+            End With
+            .add(RH)
+
+            ' Hauptträger OK
+            Dim okH As New Line(-1 * bN, 0, 1 * bN, 0)
+            With okH
+                .pen = penThin
+            End With
+            .add(okH)
+
+            ' Hauptträger UK
+            Dim ukH As New Line(-1 * bN, -hH, 1 * bN, -hH)
+            With ukH
+                .pen = penThin
+            End With
+            .add(ukH)
+
+            Dim dr As New Rectangle(-bN / 2, 0, bN / 2, -hN)
+            dr.pen = penThin
+            dr.fill = fillWood1
+            .add(dr)
+
+            Dim p As New Point(M.x, M.y)
+            p.display = PointDisplay.x
+            p.displaySize = New size(1, References.contextMillimeters)
+            p.pen = penThin
+            .add(p)
+
+            'Dim txtP As New Text
+            'txtP.text = String.Format("M ({0:F1}/{1:F1})", M.x, M.y)
+            'txtP.position = M
+            'txtP.verticalAlignment = verticalAlignment.top
+            'txtP.fontSize = fontSize
+            '.add(txtP)
+
+            Dim k As New Polygon
+            Dim xi As Single
+
+            With k
+                .points.Add(P2)
+                .points.Add(P1)
+
+                For i = 0 To 21 - 1
+                    xi = gamma / 2 + (180 - gamma / 2) / 20 * i
+                    .points.Add(New Point(M.x + r * Math.Cos(radians(xi)), M.y - r * Math.Sin(radians(xi))))
+                Next
+
+                .points.Add(P1m)
+                .points.Add(P2m)
+
+                .pen = penHidden
+                .fill = fillTransp
+            End With
+            .add(k)
+
+            Dim k_ As New Polygon
+            With k_
+                .points.Add(P2_)
+                .points.Add(P1_)
+
+                For i = 0 To 21 - 1
+                    xi = gamma / 2 + (180 - gamma / 2) / 20 * i
+                    .points.Add(New Point(M.x + (r + dZ) * Math.Cos(radians(xi)), M.y - (r + dZ) * Math.Sin(radians(xi))))
+                Next
+
+                .points.Add(P1m_)
+                .points.Add(P2m_)
+
+                .pen = penThin
+                .fill = fillTransp
+            End With
+
+            .add(k_)
+
+
+            '
+            ' dimensions
+            '
+            Dim dl_Mpos As New DimensionLine()
+            With dl_Mpos
+                .startPoint = M
+                .endPoint = New Point(0, 0)
+                .offset = New size(-2, Reference.contextMillimeters)
+                .textFormatString = "0.0"
+                .textSize = fontSize
+            End With
+
+            .add(dl_Mpos)
+
+
+            Dim dl_bZ As New DimensionLine()
+            With dl_bZ
+                .startPoint = P2m
+                .endPoint = P2
+                .offset = New size(-5, Reference.contextMillimeters)
+                .textFormatString = "bZ=0.0"
+                .textSize = fontSize
+            End With
+
+            .add(dl_bZ)
+
+            Dim dl_bZ2 As New DimensionLine()
+            With dl_bZ2
+                .startPoint = P2m_
+                .endPoint = P2_
+                .offset = New size(5, Reference.contextMillimeters)
+                .textFormatString = "0.0"
+                .textSize = fontSize
+            End With
+
+            .add(dl_bZ2)
+
+            Dim dl_hZ As New DimensionLine()
+            With dl_hZ
+                .startPoint = P3
+                .endPoint = P2
+                .alignment = DimensionLine.DimAlignement.vertical
+                .offset = New size(7, Reference.contextMillimeters)
+                .textFormatString = "hZ=0.0"
+                .textSize = fontSize
+            End With
+
+            .add(dl_hZ)
+
+
+            Dim dl_ha As New DimensionLine()
+            With dl_ha
+                .startPoint = New Point(0, -hN)
+                .endPoint = New Point(P2.x, P3.y)
+                .alignment = DimensionLine.DimAlignement.vertical
+                .offset = New size(7, Reference.contextMillimeters)
+                .textFormatString = "ha=0.0"
+                .textSize = fontSize
+            End With
+
+            .add(dl_ha)
+
+            Dim dl_bN As New DimensionLine()
+            With dl_bN
+                .startPoint = New Point(-bN / 2, -hN)
+                .endPoint = New Point(bN / 2, -hN)
+                .offset = New size(7, Reference.contextMillimeters)
+                .textFormatString = "bN=0.0"
+                .textSize = fontSize
+            End With
+
+            .add(dl_bN)
+
+
+            Dim dl_hN As New DimensionLine()
+            With dl_hN
+                .startPoint = New Point(-bN / 2, -hN)
+                .endPoint = New Point(-bN / 2, 0)
+                .offset = New size(-7, Reference.contextMillimeters)
+                .textFormatString = "hN=0.0"
+                .textSize = fontSize
+            End With
+
+            .add(dl_hN)
+
+            Dim dl_MP1 As New DimensionLine()
+            With dl_MP1
+                .startPoint = M
+                .endPoint = P1
+                .offset = New size(0, Reference.contextMillimeters)
+                .textFormatString = "r=0.0"
+                .textSize = fontSize
+            End With
+
+            .add(dl_MP1)
+
+
+            '
+            ' phi
+            '
+            Dim da_phi As New DimensionAngular(P1, P2, P1m, P2m)
+            'Dim pphi As New pen
+
+            With da_phi
+                .dimSymbol = DimensionAngular.DimSymbols.Arrow
+                .textSize = fontSize
+                .textPrefix = ChrW(947) & "="
+            End With
+
+            da_phi.offset = New size(10, Reference.contextMillimeters)
+            .add(da_phi)
+        End With
+
+
+        '
+        ' Seitenansicht
+        '
+        Dim cx As Double
+        cx = 1.5 * bN
+
+        Dim rH2 As New Polygon
+        With rH2.points
+            .Add(New Point(cx + 0, 0))
+            .Add(New Point(cx + bH - tz, 0))
+            .Add(New Point(cx + bH - tz, -hN + a - dZ))
+            .Add(New Point(cx + bH, -hN + a))
+            .Add(New Point(cx + bH, -hH))
+            .Add(New Point(cx + 0, -hH))
+            .Add(New Point(cx + 0, 0))
+        End With
+
+        With rH2
+            .pen = penThin
+            .fill = fillWood2
+        End With
+
+        With p_wmd
+            .add(rH2)
+        End With
+
+        '
+        ' Nebenträger Seitenriss
+        '
+        Dim rN2 As New Polygon
+
+        Dim P40 As New Point
+        Dim P4 As New Point
+        Dim P5 As New Point
+        Dim P6 As New Point
+
+        With rN2.points
+            .Add(New Point(cx + bH + 0.5 * bN, 0))
+            P40 = New Point(cx + bH - lz, 0)
+            .Add(P40)
+            P4 = New Point(cx + bH - lz, -hN + a - dZ)
+            .Add(P4)
+            P5 = New Point(cx + bH, -hN + a)
+            .Add(P5)
+            P6 = New Point(cx + bH, -hN)
+            .Add(P6)
+
+            .Add(New Point(cx + bH + 0.5 * bN, -hN))
+        End With
+
+        With rN2
+            .pen = penThin
+            .fill = fillWood1
+        End With
+
+        With p_wmd
+            .add(rN2)
+        End With
+
+        '
+        ' Height Hauptträger
+        '
+        Dim dl_hH As New DimensionLine()
+        With dl_hH
+            .startPoint = New Point(cx, 0)
+            .endPoint = New Point(cx, -hH)
+            .offset = New size(7, Reference.contextMillimeters)
+            .textFormatString = "hH=0.0"
+            .textSize = fontSize
+        End With
+
+        p_wmd.add(dl_hH)
+
+        '
+        ' width Hauptträger
+        '
+        Dim dl_bH As New DimensionLine()
+        With dl_bH
+            .startPoint = New Point(cx, -hH)
+            .endPoint = New Point(cx + bH, -hH)
+            .offset = New size(-7, Reference.contextMillimeters)
+            .textFormatString = "bH=0.0"
+            .textSize = fontSize
+        End With
+
+        p_wmd.add(dl_bH)
+
+        '
+        ' length dovetail
+        '
+        Dim dl_lZ As New DimensionLine()
+        With dl_lZ
+            .startPoint = P4
+            .endPoint = P5
+            .alignment = DimensionLine.DimAlignement.horizontal
+            .offset = New size(-7, Reference.contextMillimeters)
+            .textFormatString = "lZ=0.0"
+            .textSize = fontSize
+        End With
+
+        p_wmd.add(dl_lZ)
+
+        Dim dl_ha2 As New DimensionLine()
+        With dl_ha2
+            .startPoint = P5
+            .endPoint = P6
+            .alignment = DimensionLine.DimAlignement.vertical
+            .offset = New size(-7, Reference.contextMillimeters)
+            .textFormatString = "ha=0.0"
+            .textSize = fontSize
+        End With
+        p_wmd.add(dl_ha2)
+
+        Dim dl_dz As New DimensionLine()
+        With dl_dz
+            .startPoint = P5
+            .endPoint = P4
+            .alignment = DimensionLine.DimAlignement.vertical
+            .offset = New size(14, Reference.contextMillimeters)
+            .textFormatString = "0.0"
+            .textSize = fontSize
+        End With
+
+        p_wmd.add(dl_dz)
+
+        '
+        ' outer height dovetail
+        '
+        Dim dl_hZ2 As New DimensionLine()
+        With dl_hZ2
+            .startPoint = P40
+            .endPoint = P4
+            .alignment = DimensionLine.DimAlignement.vertical
+            .offset = New size(7, Reference.contextMillimeters)
+            .textFormatString = "0.0"
+            .textSize = fontSize
+        End With
+
+        p_wmd.add(dl_hZ2)
+
+        '
+        ' beta
+        '
+        Dim da_betaFW As New DimensionAngular(P5, P4, P5, P6)
+
+        With da_betaFW
+            .dimSymbol = DimensionAngular.DimSymbols.Arrow
+            .textSize = fontSize
+            .textPrefix = ChrW(946) & "="
+
+        End With
+
+        da_betaFW.offset = New size(7, Reference.contextMillimeters)
+        p_wmd.add(da_betaFW)
+
+
+        Return (p_wmd.draw())
+
+    End Function
+
+    Private Function radians(ByVal angleDegrees As Double) As Double
+        Return angleDegrees * Math.PI / 180
+    End Function
+
+    Private Function radians(ByVal angleDegrees As Single) As Single
+        Return angleDegrees * Math.PI / 180
+    End Function
+
+    ''' <summary>
+    ''' 
+    ''' </summary>
+    ''' <param name="toClipboard"></param>
+    ''' <param name="typeIndex">index of dowel type fastener</param>
+    ''' <param name="d">diameter</param>
+    ''' <param name="b1">width of part 1</param>
+    ''' <param name="h1" >byreference height of part 1</param>
+    ''' <param name="b2"></param>
+    ''' <param name="h2"></param>
+    ''' <param name="beta"></param>
+    ''' <param name="alphaF1"></param>
+    ''' <param name="nRows"></param>
+    ''' <param name="nColumns"></param>
+    ''' <param name="a1"></param>
+    ''' <param name="a2"></param>
+    ''' <param name="a3c"></param>
+    ''' <param name="a3t"></param>
+    ''' <param name="a4c"></param>
+    ''' <param name="a4t"></param>
+    ''' <returns>required values for h1 or h2, if changed</returns>
+    Public Function drawDowelGrid(toClipboard As Boolean, typeIndex As Integer, d As Single,
+                                  b1 As Single, ByRef h1 As Single,
+                                  b2 As Single, ByRef h2 As Single, beta As Single,
+                                  alphaF1 As Single,
+                                  nRows As Integer, nColumns As Integer,
+                                  Optional a1 As Single? = Nothing, Optional a2 As Single? = Nothing,
+                                  Optional a3c As Single? = Nothing, Optional a3t As Single? = Nothing,
+                                  Optional a4c As Single? = Nothing, Optional a4t As Single? = Nothing, Optional member2IsSteelPlate As Boolean = False) As Object
+        '
+        ' Drawing
+        '
         p_wmd = New WMDraw.Drawing
         If toClipboard Then
-            p_wmd.setContext(Contexts.PNGClipboard, 90, 90, "mm")
+            p_wmd.setContext(Contexts.PNGClipboard, 160, 100, "mm")
         Else
-            p_wmd.setContext(Contexts.PNGFile, 90, 90, "mm")
+            p_wmd.setContext(Contexts.PNGFile, 160, 100, "mm")
         End If
 
         Dim dAlpha As Single
-        dAlpha = alpha2 - alpha1
-        If dAlpha < 15 Then dAlpha = 90
+        dAlpha = 0
 
-        ' quer zur Faserrichtung
-        If a2 = -1 Then
-            a2 = 5 * d
-        End If
 
-        ' hirnholz
-        If a3 = -1 Then
-            a3 = 10 * d
-        End If
-
-        ' rand
-        If a4 = -1 Then
-            a4 = 7 * d
-        End If
-
-        Dim b As Single
-        Dim h As Single
-
-        Dim v As New wmg.Vector
-        Dim n As New wmg.Vector
-
-        ' create unit vector in D Alpha-direction
-        v.angle = dAlpha * Math.PI / 180
-        n = v.normal
+        Dim dtf As New DowelTypeFastener
 
         '
-        ' skew is x' = x + y*tan(alpha)
+        ' get spacing values, if not provided
         '
-        Dim t As Single
-        t = Math.Tan(Math.PI / 2 - dAlpha * Math.PI / 180)
+        dtf.dowelType = typeIndex
+        dtf.d = d
+
+        If a1 Is Nothing Then
+            a1 = dtf.a1
+        End If
+
+        If a2 Is Nothing Then
+            a2 = dtf.a2
+        End If
+
+        If a3c Is Nothing Then
+            a3c = dtf.a3c
+        End If
+
+        If a3t Is Nothing Then
+            a3t = dtf.a3t
+        End If
+
+        If a4c Is Nothing Then
+            a4c = dtf.a4c
+        End If
+
+        If a4t Is Nothing Then
+            a4t = dtf.a4t
+        End If
+
+        '
+        ' direction vector in part 1 x-axis
+        '
+        Dim vPart1x As New wmg.Vector(1, 0)
+
+        '
+        ' direction vector in part 2 x-axis
+        '
+        Dim vPart2x As New wmg.Vector(1, 0)
+        vPart2x.angle = beta * Math.PI / 180
+
+        'Dim vPart1x As New wmg.Vector(1, 0)
+        'Dim vPart2x As New wmg.Vector(1, 0)
+        'vPart2x.angle = beta * Math.PI / 180
+
+        '
+        ' inner dowel type fastener 
+        '
+
+        ' spacing in part 1
+        dtf.spacing1 = New spacing(1, 0, a1, a2, a1, a2)
+        ' spacing in part 2
+        If member2IsSteelPlate Then
+            dtf.spacing2 = New spacing(1, 0, d * 2.2, d * 2.2, d * 2.2, d * 2.2)
+        Else
+            dtf.spacing2 = New spacing(a1, a2, a1, a2)
+            dtf.spacing2.direction = vPart2x
+        End If
+
+        '
+        ' intersection of the two spacing definitions
+        ' intersection points to the neighbouring positions
+        '
+        ' v(0) is the vector to the next dtf in x-direction of part 1
+        ' v(1) is the vector to the next dtf in y-direction of part 2
+        '
+        Dim v() As wmg.Vector
+        If beta = 0 Then
+            ReDim v(1)
+            v(0) = New wmg.Vector(a1, 0)
+            v(1) = New wmg.Vector(0, a2)
+        Else
+            v = dtf.spacing1.intersection(dtf.spacing2)
+        End If
+
+
+
+        '
+        ' corner dowel type fastener
+        '
+
+        ' store distances for corner points (local quadrants I, II, III and IV correspond to indices 0,1,2 and3)
+        Dim dq1(3) As wmg.Vector
+        Dim dq2(3) As wmg.Vector
+        ' store distance strings
+        Dim dqi1(3, 1) As String
+        Dim dqi2(3, 1) As String
+
+        '
+        ' edge distances in part 1
+        '
+
+        Dim lLeft As New wmg.line
+        Dim borders(3) As wmg.line
+
+        getEdgeDistances(alphaF1, a3t, a3c, a4t, a4c, dq1, dqi1)
+
+        '
+        'edge distances in part 2
+        '
+        Dim alphaF2 As Double
+        alphaF2 = (180 - beta + alphaF1)
+
+        ' edge distances
+        If member2IsSteelPlate Then
+            getEdgeDistances(alphaF2, d * 2, d * 2, d * 2, d * 2, dq2, dqi2)
+        Else
+            getEdgeDistances(alphaF2, a3t, a3c, a4t, a4c, dq2, dqi2)
+        End If
+
+        '
+        ' compare required space with available space (from h1 and h2)
+        ' by projecting the vectors to the local coordinate system
+        '
+
+        ' project spacing vectors to the two y-axes
+
+        Dim vPart1y As wmg.Vector
+        Dim vPart2y As wmg.Vector
+
+        If beta = 0 Then
+            vPart1y = v(1).normal(False)
+            vPart2y = v(0).normal(False)
+        Else
+            vPart1y = v(1).project(vPart1x.normal)
+            vPart2y = v(0).project(vPart2x.normal)
+        End If
+
+
+        Dim h1Available As Double = h1 - Math.Abs(dq1(1).y) - Math.Abs(dq1(3).y)
+        Dim dh1Available As Double
+
+        If nRows < 1 Then nRows = 1
+        If nColumns < 1 Then nColumns = 1
+
+        If nRows = 1 Then
+            dh1Available = h1Available
+        Else
+            dh1Available = h1Available / (nRows - 1)
+        End If
+
+        Dim h2Available As Double = h2 - Math.Abs(dq2(1).y) - Math.Abs(dq2(3).y)
+        Dim dh2Available As Double
+        If nColumns = 1 Then
+            dh2Available = h2Available
+        Else
+            dh2Available = h2Available / (nColumns - 1 + 1 - 1)
+        End If
+
+        Dim dimLinePen As New pen
+        Dim dimLinePen1 As New pen
+        Dim dimLinePen2 As New pen
+
+        With dimLinePen
+            .color = WMColors.DarkGrey
+            .size = New size(0.1, Reference.contextMillimeters)
+        End With
+
+        With dimLinePen1
+            .color = WMColors.DarkGrey
+            .size = New size(0.1, Reference.contextMillimeters)
+        End With
+
+        With dimLinePen2
+            .color = WMColors.DarkGrey
+            .size = New size(0.1, Reference.contextMillimeters)
+        End With
+
+        Dim h1Overshoot As Boolean
+        Dim h2Overshoot As Boolean
+
+        If vPart1y.length > dh1Available Then
+            ' ! not enough space in member 1 height !
+            h1Overshoot = True
+            With dimLinePen1
+                .color = WMColors.Red
+                .size = New size(0.15, Reference.contextMillimeters)
+            End With
+        Else
+            h1Overshoot = False
+            ' stretch vector v(1)
+            Debug.Print("projected vector legth: {0}, from given h1={1} minus a3c={2} and a3t={3} divided by {4} rows: Available space is {5}", vPart1y.length, h1, a3c, a3t, nRows, dh1Available)
+            Debug.Print("scale {0}", dh1Available / vPart1y.length)
+            If beta = 0 Then
+                v(1) = v(1).multiply(dh1Available / vPart1y.length)
+            Else
+                Dim a As wmg.Vector = v(1).project(vPart2x).multiply(dh1Available / vPart1y.length)
+                Dim b As wmg.Vector = v(1).project(vPart2x.normal)
+                v(1) = a.add(b)
+            End If
+        End If
+
+        If vPart2y.length > dh2Available Then
+            ' ! not enough space in member 2 height !
+            h2Overshoot = True
+
+            With dimLinePen2
+                .color = WMColors.Red
+                .size = New size(0.15, Reference.contextMillimeters)
+            End With
+        Else
+            ' stretch vector v(0)
+            h2Overshoot = False
+            Debug.Print("projected vector legth: {0}, from given h1={1} minus a3c={2} and a3t={3} divided by {4} columns: Available space is {5}", vPart2y.length, h2, a3c, a3t, nColumns, dh2Available)
+            Debug.Print("scale {0}", dh2Available / vPart2y.length)
+            v(0) = v(0).multiply(dh2Available / vPart2y.length)
+        End If
+
+        '
+        ' part 1 
+        '
+        Dim edgePolygon1 As New Polygon
+        Dim edgePolygon2 As New Polygon
+        Dim ixs As New wmg.Point
+
+        If beta = 0 Then
+            Dim vp As wmg.Vector
+            vp = New wmg.Vector(0, 0)
+            vp = vp.add(v(0).multiply(nColumns - 1))
+            vp = vp.add(dq1(3))
+            edgePolygon1.points.Add(New Point(vp.x, vp.y))
+
+            vp = New wmg.Vector(0, 0)
+            vp = vp.add(v(0).multiply(nColumns - 1))
+            vp = vp.add(v(1).multiply(nRows - 1))
+            vp = vp.add(dq1(0))
+            edgePolygon1.points.Add(New Point(vp.x, vp.y))
+
+            vp = New wmg.Vector(0, 0)
+            vp = vp.add(v(1).multiply(nRows - 1))
+            vp = vp.add(dq1(1))
+            edgePolygon1.points.Add(New Point(vp.x, vp.y))
+
+            vp = New wmg.Vector(0, 0)
+            vp = vp.add(dq1(2))
+            edgePolygon1.points.Add(New Point(vp.x, vp.y))
+        Else
+
+            ' part 1 border: right border line
+            borders(0) = New wmg.Line
+
+            With borders(0)
+                .StartPoint = New wmg.Vector(0, 0)
+                .StartPoint = .StartPoint.add(v(0).multiply(nColumns - 1))
+                .StartPoint = .StartPoint.add(vPart1x.multiply(dq1(3).x))
+                .Direction = vPart2x
+            End With
+
+            ' top border line
+            borders(1) = New wmg.line
+            With borders(1)
+                .StartPoint = New wmg.Vector(0, 0)
+                .StartPoint = .StartPoint.add(v(0).multiply(nColumns - 1))
+                .StartPoint = .StartPoint.add(v(1).multiply(nRows - 1))
+                .StartPoint = .StartPoint.add(vPart1x.normal.multiply(dq1(0).y))
+                .Direction = vPart1x
+            End With
+
+            ' left border
+            borders(2) = New wmg.line
+            With borders(2)
+                .StartPoint = New wmg.Vector(0, 0)
+                .StartPoint = .StartPoint.add(vPart1x.multiply(dq1(2).x))
+                .Direction = vPart2x
+            End With
+
+            ' bottom border line
+            borders(3) = New wmg.line
+            With borders(3)
+                .StartPoint = New wmg.Vector(0, 0)
+                .StartPoint = .StartPoint.add(vPart1x.normal.multiply(dq1(2).y))
+                .Direction = vPart1x
+            End With
+            '
+            ' intersect borders to get edge points of part 1
+            '
+            For i = 0 To 3
+                Try
+                    ixs = borders(i).intersect(borders((i + 1) Mod 4))
+                Catch ex As InvalidOperationException
+                    ' lines are parallel
+                    ixs = borders(i).StartPoint.toPoint
+                End Try
+                edgePolygon1.points.Add(New Point(ixs.x, ixs.y))
+            Next
+        End If
+
+        '
+        ' part 2 boder
+        '
+        If beta = 0 Then
+            Dim vp As wmg.Vector
+            vp = New wmg.Vector(0, 0)
+            vp = vp.add(v(0).multiply(nColumns - 1))
+            vp = vp.add(dq2(3))
+            edgePolygon2.points.Add(New Point(vp.x, vp.y))
+
+            vp = New wmg.Vector(0, 0)
+            vp = vp.add(v(0).multiply(nColumns - 1))
+            vp = vp.add(v(1).multiply(nRows - 1))
+            vp = vp.add(dq2(0))
+            edgePolygon2.points.Add(New Point(vp.x, vp.y))
+
+            vp = New wmg.Vector(0, 0)
+            vp = vp.add(v(1).multiply(nRows - 1))
+            vp = vp.add(dq2(1))
+            edgePolygon2.points.Add(New Point(vp.x, vp.y))
+
+            vp = New wmg.Vector(0, 0)
+            vp = vp.add(dq2(2))
+            edgePolygon2.points.Add(New Point(vp.x, vp.y))
+        Else
+
+            ' part 2 border: quadrant 4 - border line
+            borders(0) = New wmg.line
+            With borders(0)
+                .StartPoint = New wmg.Vector(0, 0)
+                .StartPoint = .StartPoint.add(v(0).multiply(nColumns - 1))
+                .StartPoint = .StartPoint.add(v(1).multiply(nRows - 1))
+                .StartPoint = .StartPoint.add(vPart2x.multiply(dq2(3).x))
+                .Direction = vPart1x
+            End With
+
+            ' part 2 border: quadrant 1 - border line
+            borders(1) = New wmg.line
+            With borders(1)
+                .StartPoint = New wmg.Vector(0, 0)
+                .StartPoint = .StartPoint.add(v(1).multiply(nRows - 1))
+                .StartPoint = .StartPoint.add(vPart2x.normal.multiply(dq2(0).y))
+                .Direction = v(1)
+            End With
+
+            ' part 2 border: quadrant 2 - border line
+            borders(2) = New wmg.line
+            With borders(2)
+                .StartPoint = New wmg.Vector(0, 0)
+                .StartPoint = .StartPoint.add(vPart2x.multiply(dq2(2).x))
+                .Direction = vPart1x
+            End With
+
+            ' part 2 border: quadrant 3 - border line
+            borders(3) = New wmg.line
+            With borders(3)
+                .StartPoint = New wmg.Vector(0, 0)
+                .StartPoint = .StartPoint.add(v(0).multiply(nColumns - 1))
+                .StartPoint = .StartPoint.add(vPart2x.normal.multiply(dq2(2).y))
+                .Direction = v(1)
+            End With
+
+            '
+            ' now intersect to get border of part 2
+            '
+            ixs = New wmg.Point
+            For i = 0 To 3
+                Debug.Print("{0}; {1}", i, (i + 1) Mod 4)
+                ixs = borders(i).intersect(borders((i + 1) Mod 4))
+                edgePolygon2.points.Add(New Point(ixs.x, ixs.y))
+            Next
+        End If
+
+#If DEBUG Then
+        For Each ve As wmg.Vector In v
+            Debug.Print("Vector ({0}/{1})", ve.x, ve.y)
+        Next
+#End If
+        '
+        ' find measure points
+        '
+        Dim measureLine1 As New wmg.Line
+        measureLine1.StartPoint = New wmg.Vector(edgePolygon2.points(3).x, edgePolygon2.points(3).y)
+        measureLine1.Direction = vPart2x
+
+        Dim measureLine2 As New wmg.Line
+        measureLine2.StartPoint = New wmg.Vector(edgePolygon2.points(0).x, edgePolygon2.points(0).y)
+        measureLine2.Direction = vPart2y
+
+
+        Dim measurePoint1 As wmg.Point
+        Dim measurePoint2 As wmg.Point
+        Try
+            measurePoint1 = measureLine1.intersect(measureLine2)
+        Catch ex As Exception
+            measurePoint1 = measureLine1.StartPoint.toPoint
+        End Try
+        Try
+            measurePoint2 = measureLine2.StartPoint.toPoint
+        Catch ex As Exception
+            measurePoint2 = measureLine2.StartPoint.toPoint
+        End Try
+
         '
         ' horizontal lines with distance a1 and length (nColumns-1) * a2 + a3
         '
-        Dim aRows As New List(Of wmg.line)
-        Dim aCols As New List(Of wmg.line)
-
-        ' Faserrichtung horizontal
-
-        b = 2 * a4 + (nRows - 1) * a2
-        h = 2 * a3 + (nColumns - 1) * a2
-
-        ' rows (horizontal)
-        '
-        For iRow As Integer = 1 To nRows
-            aRows.Add(New wmg.line(New wmg.Point(a3 / 2 + (a4 + (iRow - 1) * a2) * t, a4 + (iRow - 1) * a2),
-                                   New wmg.Point(h - a3 / 2 + (a4 + (iRow - 1) * a2) * t, a4 + (iRow - 1) * a2)))
-        Next
-        '
-        ' coliumns (vertical)
-        '
-        For iCol As Integer = 1 To nColumns
-            aCols.Add(New wmg.line(New wmg.Point((a3 + (iCol - 1) * a1) + t * (a4 / 2), (a4 / 2)),
-                                   New wmg.Point((a3 + (iCol - 1) * a1) + t * (b - a4 / 2), (b - a4 / 2))))
-        Next
 
 
         '
-        ' draw lines
+        ' draw dowel net lines
         '
         With p_wmd
             .ContextObject.fitHeight = True
             .ContextObject.fitWidth = True
             .ContextObject.fitProportional = True
-            .ContextObject.Margin = New Margin(5, 5, 5, 5)
+            .ContextObject.Margin = New WMDraw.Margin(5, 5, 5, 5)
 
-            Dim f As New fill()
-            f.color = WMColors.WoodLightYellow
-            Dim r As New Rectangle(0, 0, h, b)
-            r.fill = f
+            Dim pNetLines As New pen()
 
-            Dim poly As New WallnerMild.WMDraw.Polygon
-            poly.fill = f
-            poly.points.Add(New Point(0, 0))
-            poly.points.Add(New Point(h, 0))
-            poly.points.Add(New Point(h + b * t, b))
-            poly.points.Add(New Point(0 + b * t, b))
-            poly.close()
-            poly.pen = New pen()
-            poly.pen.thickness = 0
-            .add(poly)
+            With pNetLines
+                .color = WMColors.DarkGrey
+                .opacity = 0.9
+                .thickness = 0.1
+                .thicknessReference = Reference.contextMillimeters
+            End With
 
-            Dim p As New pen()
-            p.color = WMColors.DarkGrey
-            p.opacity = 0.6
-            p.thickness = 0.5
+            .pen = pNetLines
 
-            .pen = p
-            For Each myRow In aRows
-                .add(New Line(myRow.P.x, myRow.P.y, myRow.P_End.x, myRow.P_End.y))
-            Next
-
-            For Each myCol In aCols
-                .add(New Line(myCol.P.x, myCol.P.y, myCol.P_End.x, myCol.P_End.y))
-            Next
-
-            Dim f2 As New fill()
-            f2.color = WMColors.DarkWallnerMildBlue
-            Dim e As New Ellipse
-
-            ' rows (horizontal)
             '
-            For iRow As Integer = 1 To nRows
-                For iCol As Integer = 1 To nColumns
-                    e = New Ellipse()
-                    e.midPoint = New Point(a3 + (iCol - 1) * a1 + t * (a4 + (iRow - 1) * a2), a4 + (iRow - 1) * a2)
-                    e.radii.height = d
-                    e.radii.width = d
-                    e.fill = f2
-                    .add(e)
+            ' start point
+            '
+            Dim ps As wmg.Vector
+            '
+            ' end point
+            '
+            Dim pe As wmg.Vector
+
+            '
+            ' draw rows (x-axis of part 1)
+            '
+            For i = 1 To nRows - 1 + 1
+                ps = New wmg.Vector(0, 0)
+                ps = ps.add(v(1).multiply(i - 1))
+                pe = ps.add(v(0).multiply(CDbl(nColumns - 1)))
+                .add(New Line(New Point(ps.x, ps.y), New Point(pe.x, pe.y)))
+            Next
+            '
+            ' draw columns (x-axis of part 2)
+            '
+            For i = 1 To nColumns - 1 + 1
+                ps = New wmg.Vector(0, 0)
+                ps = ps.add(v(0).multiply(i - 1))
+                pe = ps.add(v(1).multiply(CDbl(nRows - 1)))
+                .add(New Line(New Point(ps.x, ps.y), New Point(pe.x, pe.y)))
+            Next
+
+            '
+            ' color and fill for edge polygons
+            '
+            Dim penPart1 As New pen
+            With penPart1
+                .color = WMColors.DarkRed
+                .dashString = "7, 3"
+            End With
+            Dim part1Fill As New fill
+            part1Fill.color = WMColors.CalculateTransparentColor(WMColors.WoodMediumYellow, 0.5)
+
+            '
+            ' add edge polygon of part 1
+            '
+            edgePolygon1.fill = part1Fill
+            edgePolygon1.pen = penPart1
+            .add(edgePolygon1)
+
+            '
+            ' add edge polygon of part 2
+            '
+            Dim part2Fill As New fill
+            If member2IsSteelPlate Then
+                part2Fill.color = WMColors.CalculateTransparentColor(WMColors.LightWallnerMildBlue, 0.3)
+            Else
+                part2Fill.color = WMColors.CalculateTransparentColor(WMColors.WoodLightYellow, 0.3)
+            End If
+            Dim penPart2 As New pen
+            With penPart2
+                .color = WMColors.DarkGreen
+                .dashString = "7, 3"
+            End With
+            edgePolygon2.fill = part2Fill
+            edgePolygon2.pen = penPart2
+            .add(edgePolygon2)
+
+
+            '
+            ' fill and pen for space-ellipses
+            '
+            Dim fSpacing1 As New fill
+            With fSpacing1
+                .type = fill.fillType.linearHatching
+                .setLinearHatch(WMColors.CalculateTransparentColor(WMColors.DarkRed, 0.5, WMColors.WoodLightYellow), 1, 0.3, 2, 0)
+            End With
+
+            Dim fSpacing2 As New fill
+            With fSpacing2
+                .type = fill.fillType.linearHatching
+                .setLinearHatch(WMColors.CalculateTransparentColor(WMColors.DarkGreen, 0.5, WMColors.WoodLightYellow), 1, 0.3, 2, 0)
+            End With
+
+            Dim pSpacing1 As New pen
+            With pSpacing1
+                .dashString = "4,1"
+                .color = WMColors.CalculateTransparentColor(WMColors.DarkRed, 0.7, WMColors.WoodLightYellow)
+                .thickness = 0.1
+                .thicknessReference = Reference.contextMillimeters
+            End With
+
+            Dim pSpacing2 As New pen
+            With pSpacing2
+                .dashString = "4,1"
+                .color = WMColors.CalculateTransparentColor(WMColors.DarkGreen, 0.7, WMColors.WoodLightYellow)
+                .thickness = 0.1
+                .thicknessReference = Reference.contextMillimeters
+            End With
+
+
+            '
+            ' fill and pen for dowel
+            '
+            Dim fillDowel As New fill()
+            fillDowel.color = WMColors.DarkWallnerMildBlue
+            Dim dowelEllipse As New Ellipse
+            Dim forceArr As New ForceArrow
+
+            '
+            ' dowel spacing ellipses
+            ' only drawn, if more than 3x3 dowels
+            '
+            If nRows > 2 And nColumns >= 2 Then
+                ps = New wmg.Vector(0, 0)
+                ps = ps.add(v(1).multiply(2 - 1))
+                ps = ps.add(v(0).multiply(2 - 1))
+                '
+                ' Spacing Ellipse for part 1 and dowel in second row and second column
+                '
+                Dim eSpacing1 As New Ellipse
+                With eSpacing1
+                    .midPoint = New Point(ps.x, ps.y)
+                    .radii.height = dtf.spacing1.top
+                    .radii.width = dtf.spacing1.right
+                    .radii.Reference = Reference.world
+                    .angle = dtf.spacing1.direction.angle * 180 / Math.PI
+                    .fill = fSpacing1
+                    .pen = pSpacing1
+                End With
+
+                .add(eSpacing1)
+
+                '
+                ' Spacing Ellipse for part 2 and dowel in second row and second column
+                '
+                Dim eSpacing2 As New Ellipse
+                With eSpacing2
+                    .midPoint = New Point(ps.x, ps.y)
+                    .radii.height = dtf.spacing2.top
+                    .radii.width = dtf.spacing2.right
+                    .radii.Reference = Reference.world
+                    .angle = dtf.spacing2.direction.angle * 180 / Math.PI
+                    .fill = fSpacing2
+                    .pen = pSpacing2
+                End With
+                .add(eSpacing2)
+            End If
+
+            '
+            ' dowels
+            '
+            For iRow As Integer = 1 To nRows - 1 + 1
+                For iCol As Integer = 1 To nColumns - 1 + 1
+                    '
+                    ' mid point
+                    '
+                    ps = New wmg.Vector(0, 0)
+                    ps = ps.add(v(1).multiply(iRow - 1))
+                    ps = ps.add(v(0).multiply(iCol - 1))
+                    '
+                    ' ellipse
+                    '
+                    dowelEllipse = New Ellipse()
+                    With dowelEllipse
+                        .midPoint = New Point(ps.x, ps.y)
+                        .radii.height = d / 2
+                        .radii.width = d / 2
+                        .radii.Reference = Reference.world
+                        .fill = fillDowel
+                    End With
+                    .add(dowelEllipse)
+
+                    '
+                    ' force arrow
+                    '
+                    forceArr = New ForceArrow
+                    With forceArr
+                        .tipPoint = dowelEllipse.midPoint
+                        .arrowSize = New size(1, Reference:=Reference.contextMillimeters)
+                        '.MaximumSizeMM = 3
+                        .MaximumSize = New size(1.5 * d, Reference.world)
+                        .ForceDirection = ForceArrow.forceDirections.ArrowAtBottom
+                        .pen = New pen()
+                        .pen.color = WMColors.DarkRed
+                        .pen.thickness = 0.25
+                        .pen.thicknessReference = Reference.contextMillimeters
+                        .F = 1
+                        .angle = alphaF1
+                    End With
+                    .add(forceArr)
+
+                    forceArr = New ForceArrow
+                    With forceArr
+                        .tipPoint = dowelEllipse.midPoint
+                        .arrowSize = New size(1, Reference:=Reference.contextMillimeters)
+                        '.MaximumSizeMM = 3
+                        .MaximumSize = New size(1.5 * d, Reference.world)
+                        .ForceDirection = ForceArrow.forceDirections.ArrowAtBottom
+                        .pen = New pen()
+                        .pen.color = WMColors.DarkGreen
+                        .pen.dashString = "2,1"
+                        .pen.thickness = 0.25
+                        .pen.thicknessReference = Reference.contextMillimeters
+                        .F = 1
+                        .angle = alphaF1 - 180
+                    End With
+                    .add(forceArr)
+
                 Next
             Next
 
+            '
+            '  |        Dimension lines          |
+            '  /---------------------------------/
+            '  |                                 |
+            '
+
+            '
+            ' part 1 vertical dimension lines
+            '
             Dim dl As New DimensionLine
-            dl.startPoint = New Point(a3 + (nColumns - 1) * a1 + t * (a4 + (nRows - 2) * a2), a4 + (nRows - 2) * a2)
-            dl.endPoint = New Point(a3 + (nColumns - 1) * a1 + t * (a4 + (nRows - 1) * a2), a4 + (nRows - 1) * a2)
-            dl.textOverwrite = "a2"
+            Dim dl3 As New DimensionLine
+
+            ' edge 1
+            dl = New DimensionLine
+            dl.textFormatString = "0"
+            dl.textSize = New size(1.4, Reference.contextMillimeters)
+            dl.pen = dimLinePen
+
             dl.offset.average = 5
             dl.symbolSize.average = 2
             dl.alignment = DimensionLine.DimAlignement.vertical
-            .add(dl)
 
+            dl3 = New DimensionLine
+            dl3 = dl.copy
+
+            dl3.startPoint = New Point(0, 0)
+            dl3.endPoint = New Point(edgePolygon1.points(2).x, edgePolygon1.points(2).y)
+            .add(dl3)
+
+            dl3 = New DimensionLine
+            dl3 = dl.copy
+            dl3.pen = dimLinePen
+
+            ps = New wmg.Vector(0, 0)
+            ps = ps.add(v(1).multiply(nRows - 1))
+
+            dl3.startPoint = New Point(edgePolygon1.points(1).x * 0, edgePolygon1.points(1).y)
+            dl3.endPoint = New Point(0, ps.y)
+            .add(dl3)
+
+
+            '
+            ' height h1
+            '
+            dl3 = New DimensionLine
+            dl3 = dl.copy
+            dl3.pen = dimLinePen1
+            dl3.startPoint = New Point(edgePolygon1.points(1).x, edgePolygon1.points(1).y)
+            dl3.endPoint = New Point(edgePolygon1.points(2).x, edgePolygon1.points(2).y)
+
+            If h1Overshoot Then
+                dl3.textPrefix = "!!  "
+                dl3.textSuffix = "  !!"
+            End If
+
+            .add(dl3)
+
+            '
+            ' change h1 in case of overshoot
+            '
+            If h1Overshoot Then h1 = dl3.distance
+
+            For iRow As Integer = 1 To nRows - 1
+                dl = New DimensionLine
+                ps = New wmg.Vector(0, 0)
+                ps = ps.add(v(1).multiply(iRow - 1))
+                pe = ps.add(v(1))
+                dl.startPoint = New Point(0, pe.y)
+                dl.endPoint = New Point(0, ps.y)
+                dl.textFormatString = "0"
+                dl.textSize = New size(1.4, Reference.contextMillimeters)
+                dl.pen = New pen()
+                dl.pen.color = WMColors.DarkGrey
+                dl.pen.size = New size(0.1, Reference.contextMillimeters)
+
+                dl.offset.average = 5
+                dl.symbolSize.average = 2
+                dl.alignment = DimensionLine.DimAlignement.vertical
+                .add(dl)
+            Next
+
+            'part 1 horizontal dimension lines
             Dim dl2 As New DimensionLine
-            dl2.startPoint = New Point(a3 + (nColumns - 1) * a1 + t * (a4 + (nRows - 1) * a2), a4 + (nRows - 1) * a2)
-            dl2.endPoint = New Point(a3 + (nColumns - 2) * a1 + t * (a4 + (nRows - 1) * a2), a4 + (nRows - 1) * a2)
-            dl2.textOverwrite = "a1"
-            dl2.offset.average = 5
-            dl2.symbolSize.average = 2
-            .add(dl2)
+            dl2 = dl.copy()
+            dl2.alignment = DimensionLine.DimAlignement.horizontal
+
+            dl3 = New DimensionLine
+            dl3 = dl2.copy
+            dl3.startPoint = New Point(edgePolygon1.points(2).x, edgePolygon1.points(2).y * 0)
+            dl3.endPoint = New Point(0, 0)
+            .add(dl3)
+
+            If beta = 0 Then
+                dl3 = New DimensionLine
+                dl3 = dl2.copy
+
+                Dim vp As New wmg.Vector
+                vp = New wmg.Vector(0, 0)
+                vp = vp.add(v(0).multiply(nColumns - 1))
+
+                dl3.endPoint = New Point(edgePolygon1.points(0).x, edgePolygon1.points(0).y * 0)
+                dl3.startPoint = New Point(vp.x, vp.y * 0)
+
+                .add(dl3)
+            End If
+
+            dl3 = New DimensionLine
+            dl3 = dl2.copy
+
+            dl3.startPoint = New Point(edgePolygon1.points(2).x, edgePolygon1.points(2).y)
+            dl3.endPoint = New Point(edgePolygon1.points(3).x, edgePolygon1.points(3).y)
+            .add(dl3)
+
+
+            For icol As Integer = 1 To nColumns - 1
+                dl3 = New DimensionLine
+                dl3 = dl2.copy
+                ps = New wmg.Vector(0, 0)
+                ps = ps.add(v(0).multiply(icol - 1))
+                pe = ps.add(v(0))
+                dl3.startPoint = New Point(ps.x, 0)
+                dl3.endPoint = New Point(pe.x, 0)
+                .add(dl3)
+            Next
 
             '
-            ' Faserrichtung
+            ' part2 x-dimension lines
+            '
+            Dim dl5 As New DimensionLine
+            pe = New wmg.Vector
+
+            For iRow As Integer = 1 To nRows - 1
+                dl5 = New DimensionLine
+                dl5 = dl2.copy
+                dl5.alignment = DimensionLine.DimAlignement.aligned
+                dl5.offset = New size(dl5.offset.thickness * 1.5, dl5.offset.Reference)
+                ps = New wmg.Vector(0, 0)
+                ps = ps.add(v(0).multiply(nColumns - 1))
+                ps = ps.add(v(1).multiply(iRow - 1))
+
+                pe = ps.add(v(1))
+
+                dl5.startPoint = New Point(ps.x, ps.y)
+                dl5.endPoint = New Point(pe.x, pe.y)
+                .add(dl5)
+
+            Next
+
+
+            '
+            ' intersection of upper border of part 2 with rightmost column
+            '
+            measureLine1 = New wmg.Line
+            measureLine1.StartPoint = pe
+            measureLine1.Direction = v(1)
+
+            measureLine2 = New wmg.Line
+            measureLine2.StartPoint = New wmg.Vector(edgePolygon2.points(3).x, edgePolygon2.points(3).y)
+            measureLine2.Direction = v(0)
+
+            Dim measurePoint3 As wmg.Point = measureLine1.intersect(measureLine2)
+            Dim measurePoint4 As wmg.Point = measureLine1.StartPoint.toPoint
+
+            '
+            ' intersection of lower border of part 2 with rightmost column
+            '
+            measureLine1 = New wmg.line
+            ps = New wmg.Vector(0, 0)
+            ps = ps.add(v(0).multiply(nColumns - 1))
+            measureLine1.StartPoint = ps
+            measureLine1.Direction = v(1)
+
+            measureLine2 = New wmg.Line
+            measureLine2.StartPoint = New wmg.Vector(edgePolygon2.points(1).x, edgePolygon2.points(1).y)
+            measureLine2.Direction = v(0)
+
+            Dim measurePoint5 As wmg.Point = measureLine1.intersect(measureLine2)
+            Dim measurePoint6 As wmg.Point = measureLine1.StartPoint.toPoint
+
+            Dim dl4 As New DimensionLine
+
+            dl5 = New DimensionLine
+            dl5 = dl2.copy
+            dl5.alignment = DimensionLine.DimAlignement.aligned
+            dl5.offset = New size(dl5.offset.thickness * 1.5, dl5.offset.Reference)
+            dl5.startPoint = New Point(measurePoint4.x, measurePoint4.y)
+            dl5.endPoint = New Point(measurePoint3.x, measurePoint3.y)
+            .add(dl5)
+
+            dl5 = New DimensionLine
+            dl5 = dl2.copy
+            dl5.alignment = DimensionLine.DimAlignement.aligned
+            dl5.offset = New size(dl5.offset.thickness * 1.5, dl5.offset.Reference)
+            dl5.startPoint = New Point(measurePoint5.x, measurePoint5.y)
+            dl5.endPoint = New Point(measurePoint6.x, measurePoint6.y)
+            .add(dl5)
+
+            '
+            ' part2 y-dimension lines
             '
 
-            Dim frl1 As New Line()
-            frl1.startPoint = New Point(5 + 5 * t, 5, Reference.contextMillimeters)
-            frl1.endPoint = New Point(15 + 5 * t, 5, Reference.contextMillimeters)
+            dl4 = New DimensionLine
+            dl4 = dl2.copy
+            dl4.pen = dimLinePen2
+            dl4.offset = New size(dl4.offset.thickness * 2, dl4.offset.Reference)
+            dl4.alignment = DimensionLine.DimAlignement.aligned
+            dl4.startPoint = New Point(measurePoint1.x, measurePoint1.y)
+            dl4.endPoint = New Point(measurePoint2.x, measurePoint2.y)
 
-            Dim frl2 As New Line()
-            frl2.startPoint = New Point(5 + 5 * t + 1, 6, Reference.contextMillimeters)
-            frl2.endPoint = New Point(5 + 5 * t, 5, Reference.contextMillimeters)
+            If h2Overshoot Then
+                dl4.textPrefix = "!!  "
+                dl4.textSuffix = "  !!"
+            End If
+            .add(dl4)
+            '
+            ' change h2 value in case of overshoot
+            '
+            If h2Overshoot Then h2 = dl4.distance
 
-            Dim frl3 As New Line()
-            frl3.startPoint = New Point(15 + 5 * t - 1, 4, Reference.contextMillimeters)
-            frl3.endPoint = New Point(15 + 5 * t, 5, Reference.contextMillimeters)
 
-            .add(frl1)
-            .add(frl2)
-            .add(frl3)
+            Dim dimPoint As New wmg.Vector
+            Dim vProj As wmg.Vector
+            vProj = v(0).project(vPart2y)
+
+            pe = New wmg.Vector
+
+            For iCol = 1 To nColumns - 1
+                dl3 = New DimensionLine
+                dl3 = dl2.copy
+                dl3.alignment = DimensionLine.DimAlignement.aligned
+
+                ps = New wmg.Vector(0, 0)
+                ps = ps.add(v(1).multiply(nRows - 1))
+                ps = ps.add(v(0).multiply(iCol - 1))
+                If iCol = 1 Then
+                    pe = ps.add(vProj)
+                Else
+                    ps = pe
+                    pe = pe.add(vProj)
+                End If
+
+                dl3.endPoint = New Point(ps.x, ps.y)
+                dl3.startPoint = New Point(pe.x, pe.y)
+                .add(dl3)
+            Next
 
             '
-            ' Kraft
+            ' intersection of lower border of part 2 with rightmost column
             '
-            Dim frc As New ForceArrow
-            Dim p3 As New pen
-            p3.color = WMColors.DarkRed
-            p3.thickness = 2
-            .pen = p3
+            measureLine1 = New wmg.line
+            ps = New wmg.Vector(0, 0)
+            ps = ps.add(v(1).multiply(nRows - 1))
+            measureLine1.StartPoint = ps
+            measureLine1.Direction = vPart2y
 
-            frc = New ForceArrow
-            frc.tipPoint = New Point(a3 + t * a4, a4)
-            frc.angle = alpha1 - 180
-            frc.F = 0.8
-            frc.ForceDirection = ForceArrow.forceDirections.ArrowAtBottom
-            .add(frc)
+            measureLine2 = New wmg.Line
+            measureLine2.StartPoint = New wmg.Vector(edgePolygon2.points(1).x, edgePolygon2.points(1).y)
+            measureLine2.Direction = vPart2x
+
+            Dim measurePoint7 As wmg.Point = measureLine1.intersect(measureLine2)
+            Dim measurePoint8 As wmg.Point = measureLine1.StartPoint.toPoint
+
+            dl3 = New DimensionLine
+            dl3 = dl2.copy
+            dl3.alignment = DimensionLine.DimAlignement.aligned
+            dl3.endPoint = New Point(measurePoint7.x, measurePoint7.y)
+            dl3.startPoint = New Point(measurePoint8.x, measurePoint8.y)
+            .add(dl3)
+
+
+            ''
+            '' Faserrichtung Bauteil 1
+            ''
+
+            ps = New wmg.Vector(0, 0)
+            ps = ps.add(v(1).multiply(((nRows - 1) + 0.5) - 1))
+            ps = ps.add(v(0).multiply(((nColumns - 1) + 0.5) - 1))
+            Dim wg1 As New WoodGrainSymbol(ps.x, ps.y, 0)
+            wg1.pen.color = WMColors.DarkRed
+            .add(wg1)
+
+            ps = New wmg.Vector(0, 0)
+            ps = ps.add(v(1).multiply((nRows + 0.15) - 1))
+            ps = ps.add(v(0).multiply(((nColumns - 1) + 0.5) - 1))
+
+            Dim wg2 As New WoodGrainSymbol(ps.x, ps.y, beta)
+            wg2.pen.color = WMColors.DarkGreen
+            .add(wg2)
 
         End With
 
@@ -302,7 +1560,71 @@ Public Class c_WMComDraw
         Return (p_wmd.draw())
 
     End Function
+    Private Sub getEdgeDistances(alphaF As Double, a3t As Double, a3c As Double, a4t As Double, a4c As Double, ByRef dq() As wmg.Vector, ByRef dqi(,) As String)
+        ReDim dq(3)
+        ReDim dqi(3, 1)
+        Dim quadrant As Integer
 
+        quadrant = Math.Floor(alphaF / 90)
+        quadrant = quadrant Mod 4
+        quadrant += 1
+
+        Select Case quadrant
+            Case 1
+                ' quadrant 1
+                dq(0) = New wmg.Vector(a3t, a4t)
+                dqi(0, 0) = "a3c" : dqi(0, 1) = "a4c"
+                ' quadrant 2
+                dq(1) = New wmg.Vector(-a3c, a4t)
+                dqi(1, 0) = "a3t" : dqi(1, 1) = "a4c"
+                ' quadrant 3
+                dq(2) = New wmg.Vector(-a3c, -a4c)
+                dqi(2, 0) = "a3t" : dqi(2, 1) = "a4t"
+                ' quadrant 4
+                dq(3) = New wmg.Vector(a3t, -a4c)
+                dqi(3, 0) = "a3c" : dqi(3, 1) = "a4t"
+            Case 2
+                ' quadrant 1
+                dq(0) = New wmg.Vector(a3c, a4t)
+                dqi(0, 0) = "a3c" : dqi(0, 1) = "a4t"
+                ' quadrant 2
+                dq(1) = New wmg.Vector(-a3t, a4t)
+                dqi(1, 0) = "a3t" : dqi(1, 1) = "a4t"
+                ' quadrant 3
+                dq(2) = New wmg.Vector(-a3t, -a4c)
+                dqi(2, 0) = "a3t" : dqi(2, 1) = "a4c"
+                ' quadrant 4
+                dq(3) = New wmg.Vector(a3c, -a4c)
+                dqi(3, 0) = "a3c" : dqi(3, 1) = "a4c"
+            Case 3
+                ' quadrant 1
+                dq(0) = New wmg.Vector(a3c, a4c)
+                dqi(0, 0) = "a3t" : dqi(0, 1) = "a4t"
+                ' quadrant 2
+                dq(1) = New wmg.Vector(-a3t, a4c)
+                dqi(1, 0) = "a3c" : dqi(1, 1) = "a4t"
+                ' quadrant 3
+                dq(2) = New wmg.Vector(-a3t, -a4t)
+                dqi(2, 0) = "a3c" : dqi(2, 1) = "a4c"
+                ' quadrant 4
+                dq(3) = New wmg.Vector(a3c, -a4t)
+                dqi(3, 0) = "a3t" : dqi(3, 1) = "a4c"
+            Case 4
+                ' quadrant 1
+                dq(0) = New wmg.Vector(a3t, a4c)
+                dqi(0, 0) = "a3c" : dqi(0, 1) = "a4t"
+                ' quadrant 2
+                dq(1) = New wmg.Vector(-a3c, a4c)
+                dqi(1, 0) = "a3t" : dqi(1, 1) = "a4t"
+                ' quadrant 3
+                dq(2) = New wmg.Vector(-a3c, -a4c)
+                dqi(2, 0) = "a3t" : dqi(2, 1) = "a4c"
+                ' quadrant 4
+                dq(3) = New wmg.Vector(a3t, -a4t)
+                dqi(3, 0) = "a3c" : dqi(3, 1) = "a4c"
+        End Select
+
+    End Sub
 
     Public Sub test3()
         Dim p As New Drawing

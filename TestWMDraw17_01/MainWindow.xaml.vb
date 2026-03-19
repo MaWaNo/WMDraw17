@@ -132,7 +132,7 @@ Class MainWindow
         '
         wmd.Context = Contexts.WPFCanvas
 
-        wmd.ContextObject.Margin = New Margin(100)
+        wmd.ContextObject.Margin = New WMDraw.Margin(100)
         wmd.ContextObject.Margin.Reference = Reference.contextUnits
 
         wmd.ContextObject.fitHeight = True
@@ -163,13 +163,13 @@ Class MainWindow
     End Sub
 
     Private Sub button1_Click(sender As Object, e As RoutedEventArgs) Handles button1.Click
-        Dim l1 As New Geom.line
-        l1.P = New Geom.Vector(1, 1)
-        l1.d = New Geom.Vector(1, 1)
+        Dim l1 As New Geom.Line
+        l1.StartPoint = New Geom.Vector(1, 1)
+        l1.Direction = New Geom.Vector(1, 1)
         'l1.offsetLine(0.5)
-        Dim l2 As New Geom.line
-        l2.P = New Geom.Vector(3, 1)
-        l2.d = New Geom.Vector(0, 1)
+        Dim l2 As New Geom.Line
+        l2.StartPoint = New Geom.Vector(3, 1)
+        l2.Direction = New Geom.Vector(0, 1)
         'l2.offsetLine(0.5)
 
         Dim S As New Geom.Point
@@ -198,7 +198,7 @@ Class MainWindow
         wmd.add(New Line(4.5, 1.5, 9, 3, Reference.world))
         wmd.setContext(Contexts.PNGFile, 50, 50, "mm")
         wmd.ContextObject.fitProportional = True
-        wmd.ContextObject.Margin = New Margin(10, 10, 10, 10)
+        wmd.ContextObject.Margin = New WMDraw.Margin(10, 10, 10, 10)
         MsgBox(wmd.draw())
     End Sub
 
@@ -226,7 +226,7 @@ Class MainWindow
 
         wmd.setContext(Contexts.PNGFile, 50, 50, "mm", "d:\temp\file1.png")
 
-        wmd.ContextObject.Margin = New Margin(3)
+        wmd.ContextObject.Margin = New WMDraw.Margin(3)
         wmd.ContextObject.Margin.Reference = Reference.contextMillimeters
 
         MsgBox(wmd.draw())
@@ -244,7 +244,7 @@ Class MainWindow
         '
         wmd.Context = Contexts.WPFCanvas
 
-        wmd.ContextObject.Margin = New Margin(50)
+        wmd.ContextObject.Margin = New WMDraw.Margin(50)
         wmd.ContextObject.Margin.Reference = Reference.contextUnits
 
         wmd.ContextObject.fitHeight = True

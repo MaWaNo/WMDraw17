@@ -43,6 +43,10 @@ Namespace WMDraw
         ''' Fraction of the drawing context
         ''' </summary>
         contextFraction
+        ''' <summary>
+        ''' keep as is
+        ''' </summary>
+        asIs
     End Enum
 
     ''' <summary>
@@ -146,6 +150,10 @@ Namespace WMDraw
             Me.p_context = contextType
 
             Select Case contextType
+                Case Contexts.WPFCanvas
+
+                    Me.p_contextObject.Item = CType(values(0), System.Windows.Controls.Canvas)
+
                 Case Contexts.PNGClipboard
                     ' PNG in Clipboard
                     Dim c As New System.Windows.Controls.Canvas
@@ -318,6 +326,8 @@ Namespace WMDraw
             ' copy to Clipboard or save to File
             '
             Select Case Me.Context
+                Case Contexts.WPFCanvas
+
                 Case Contexts.PNGClipboard, Contexts.PNGFile
                     '
                     ' Save current canvas transform
@@ -460,6 +470,9 @@ Namespace WMDraw
             Dim sTrans As New size
 
             Select Case s.Reference
+                Case Reference.asIs
+                    sTrans.width = s.width
+                    sTrans.height = s.height
                 Case Reference.contextUnits
                     ' unchanged
                     sTrans.width = s.width * 96 / DEFAULT_OUTPUT_DPI
@@ -496,6 +509,11 @@ Namespace WMDraw
                     p_mTrans = New Margin
 
                     Select Case m.Reference
+                        Case Reference.asIs
+                            p_mTrans.left = m.left
+                            p_mTrans.top = m.top
+                            p_mTrans.right = m.right
+                            p_mTrans.bottom = m.bottom
                         Case Reference.contextUnits
                             p_mTrans.left = m.left * 96 / DEFAULT_OUTPUT_DPI
                             p_mTrans.top = m.top * 96 / DEFAULT_OUTPUT_DPI
@@ -604,7 +622,12 @@ Namespace WMDraw
                 If worldWidth = 0 Then
                     scaleX = 1
                 Else
+
                     scaleX = (Me.ContextObject.width - Me.contextMargin.left - Me.contextMargin.right) / worldWidth
+
+                    If Double.IsNaN(scaleX) Then
+                        scaleX = 1.0
+                    End If
                 End If
             End If
 
@@ -613,7 +636,14 @@ Namespace WMDraw
                 If worldHeight = 0 Then
                     scaleY = 1
                 Else
+
+
                     scaleY = (Me.ContextObject.height - Me.contextMargin.bottom - Me.contextMargin.top) / worldHeight
+
+                    If Double.IsNaN(scaleY) Then
+                        scaleX = 1.0
+                    End If
+
                 End If
             End If
 
@@ -641,20 +671,26 @@ Namespace WMDraw
             Dim pTrans As New Point
 
             Select Case p.coordinateReference
+                Case Reference.asIs
+                    pTrans.x = p.x
+                    pTrans.y = p.y
                 Case Reference.contextUnits
                     ' unchanged but with margin
                     pTrans.x = Me.contextMargin.left + p.x * 96 / DEFAULT_OUTPUT_DPI
+
                     pTrans.y = Me.ContextObject.height - Me.contextMargin.bottom - p.y * 96 / DEFAULT_OUTPUT_DPI
 
                 Case Reference.contextFraction
                     ' fraction to contextUnits
                     ' with margins added
+
                     pTrans.x = Me.contextMargin.left + p.x * (Me.ContextObject.width - Me.contextMargin.left - Me.contextMargin.right)
                     pTrans.y = Me.ContextObject.height - Me.contextMargin.bottom -
                                 (Me.ContextObject.height - Me.contextMargin.bottom - Me.contextMargin.top) * p.y
                 Case Reference.contextMillimeters
                     ' millimeters to contextUnits
                     ' with margins added
+
                     pTrans.x = Me.contextMargin.left +
                                 p.x / Me.ContextObject.widthMM * (Me.ContextObject.width - Me.contextMargin.left - Me.contextMargin.right)
                     pTrans.y = (Me.ContextObject.height - Me.contextMargin.bottom) -
@@ -885,7 +921,14 @@ Namespace WMDraw
                     'End If
 
                     p_width = myCanvas.Width
+                    If Double.IsNaN(p_width) Or p_width = 0 Then
+                        p_width = myCanvas.ActualWidth
+                    End If
+
                     p_height = myCanvas.Height
+                    If Double.IsNaN(p_height) Or p_height = 0 Then
+                        p_height = myCanvas.ActualHeight
+                    End If
 
                 End If
             End Set
